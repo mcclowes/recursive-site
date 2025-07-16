@@ -5,10 +5,16 @@ const axios = require('axios');
 // Configuration
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const MAX_TOKENS = 12000; // Higher limit for GPT-3.5-turbo (16k context window)
 
 if (!OPENAI_API_KEY) {
   console.error('OPENAI_API_KEY environment variable is required');
   process.exit(1);
+}
+
+// Simple token estimation (rough approximation: 1 token ≈ 4 characters)
+function estimateTokens(text) {
+  return Math.ceil(text.length / 4);
 }
 
 // Function to get repository information
@@ -27,21 +33,29 @@ async function getRepositoryInfo() {
   }
 }
 
-// Function to analyze repository structure
+// Function to analyze repository structure (optimized for token usage)
 function analyzeRepositoryStructure() {
   const analysis = {
     files: [],
     directories: [],
     fileTypes: {},
     totalFiles: 0,
-    totalDirectories: 0
+    totalDirectories: 0,
+    topLevelItems: []
   };
 
-  function scanDirectory(dirPath, relativePath = '') {
+  function scanDirectory(dirPath, relativePath = '', depth = 0) {
     try {
       const items = fs.readdirSync(dirPath);
       
-      for (const item of items) {
+      // Limit depth to avoid scanning too deep
+      if (depth > 3) return;
+      
+      // Limit items per directory to avoid overwhelming context
+      const maxItemsPerDir = depth === 0 ? 50 : 20;
+      const limitedItems = items.slice(0, maxItemsPerDir);
+      
+      for (const item of limitedItems) {
         const fullPath = path.join(dirPath, item);
         const relativeItemPath = path.join(relativePath, item);
         
@@ -52,9 +66,12 @@ function analyzeRepositoryStructure() {
         const stats = fs.statSync(fullPath);
         
         if (stats.isDirectory()) {
+          if (depth === 0) {
+            analysis.topLevelItems.push(relativeItemPath);
+          }
           analysis.directories.push(relativeItemPath);
           analysis.totalDirectories++;
-          scanDirectory(fullPath, relativeItemPath);
+          scanDirectory(fullPath, relativeItemPath, depth + 1);
         } else {
           analysis.files.push(relativeItemPath);
           analysis.totalFiles++;
@@ -72,7 +89,7 @@ function analyzeRepositoryStructure() {
   return analysis;
 }
 
-// Function to read important files
+// Function to read important files (optimized for token usage)
 function readImportantFiles() {
   const importantFiles = [
     'README.md',
@@ -93,11 +110,27 @@ function readImportantFiles() {
   ];
 
   const fileContents = {};
+  let totalTokens = 0;
   
   for (const file of importantFiles) {
     try {
       if (fs.existsSync(file)) {
-        fileContents[file] = fs.readFileSync(file, 'utf8');
+        let content = fs.readFileSync(file, 'utf8');
+        
+        // Limit file content to reduce tokens
+        const maxCharsPerFile = 500; // Reduced from 1000
+        if (content.length > maxCharsPerFile) {
+          content = content.substring(0, maxCharsPerFile) + '...';
+        }
+        
+        const fileTokens = estimateTokens(content);
+        if (totalTokens + fileTokens > MAX_TOKENS * 0.3) { // Use only 30% of tokens for file contents
+          console.log(`⚠️ Stopping file reading to stay within token limits (${totalTokens} tokens used)`);
+          break;
+        }
+        
+        fileContents[file] = content;
+        totalTokens += fileTokens;
       }
     } catch (error) {
       console.error(`Error reading ${file}:`, error.message);
@@ -229,6 +262,7 @@ function calculateSimilarity(topics1, topics2) {
 
 // Function to call OpenAI API
 async function generateSuggestions(repoInfo, analysis, fileContents) {
+  // Create a more concise prompt
   const prompt = `
 You are an expert software developer and repository analyst. Analyze the following repository information and provide specific, actionable improvement suggestions.
 
@@ -238,32 +272,35 @@ Repository Information:
 - Language: ${repoInfo?.language || 'Not specified'}
 - Stars: ${repoInfo?.stargazers_count || 0}
 - Forks: ${repoInfo?.forks_count || 0}
-- Created: ${repoInfo?.created_at || 'Unknown'}
-- Last updated: ${repoInfo?.updated_at || 'Unknown'}
 
-Repository Structure Analysis:
+Repository Structure:
 - Total files: ${analysis.totalFiles}
 - Total directories: ${analysis.totalDirectories}
-- File types: ${JSON.stringify(analysis.fileTypes)}
-- Directories: ${analysis.directories.join(', ')}
-- Files: ${analysis.files.slice(0, 20).join(', ')}${analysis.files.length > 20 ? '...' : ''}
+- Top-level items: ${analysis.topLevelItems.slice(0, 15).join(', ')}${analysis.topLevelItems.length > 15 ? '...' : ''}
+- Main file types: ${Object.entries(analysis.fileTypes)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 10)
+    .map(([ext, count]) => `${ext}:${count}`)
+    .join(', ')}
 
-Important Files Content:
-${Object.entries(fileContents).map(([file, content]) => `\n${file}:\n\`\`\`\n${content.substring(0, 1000)}${content.length > 1000 ? '...' : ''}\n\`\`\``).join('\n')}
+Important Files:
+${Object.entries(fileContents).map(([file, content]) => `${file}: ${content.substring(0, 200)}${content.length > 200 ? '...' : ''}`).join('\n')}
 
-Based on this analysis, please provide:
-1. 3-5 specific, actionable improvement suggestions
-2. Each suggestion should be concrete and implementable
-3. Focus on code quality, documentation, structure, and best practices
-4. Consider the repository's current state and potential for growth
-5. Include technical recommendations that would add value
-
-Format your response as a markdown document with clear sections and bullet points.
+Provide 3-5 specific, actionable improvement suggestions focusing on code quality, documentation, structure, and best practices. Format as markdown with clear sections.
 `;
+
+  // Check token usage before making API call
+  const estimatedTokens = estimateTokens(prompt);
+  console.log(`📊 Estimated tokens for prompt: ${estimatedTokens}`);
+  
+  if (estimatedTokens > MAX_TOKENS) {
+    console.error(`❌ Prompt too large (${estimatedTokens} tokens > ${MAX_TOKENS} limit)`);
+    return null;
+  }
 
   try {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-4',
+      model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
@@ -304,6 +341,8 @@ async function main() {
   const fileContents = readImportantFiles();
   
   console.log(`📊 Found ${analysis.totalFiles} files and ${analysis.totalDirectories} directories`);
+  console.log(`📁 Top-level items: ${analysis.topLevelItems.length}`);
+  console.log(`📄 File types found: ${Object.keys(analysis.fileTypes).length}`);
   
   // Generate suggestions
   console.log('🤖 Generating improvement suggestions...');
