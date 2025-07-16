@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import SimpleCodeEditor from '@/components/SimpleCodeEditor';
 import RealtimeSuggestions from '@/components/RealtimeSuggestions';
+import PerformanceDashboard from '@/components/PerformanceDashboard';
 import toast, { Toaster } from 'react-hot-toast';
 import { debounce } from 'lodash';
 
@@ -229,6 +230,9 @@ export default function Home() {
               {isRealtimeEnabled && (
                 <RealtimeSuggestions suggestions={realtimeSuggestions} isConnected={!isRealtimeAnalyzing} />
               )}
+              
+              {/* Performance Dashboard */}
+              <PerformanceDashboard code={code} language={language} />
             </div>
 
             {/* Analysis Results Section */}
@@ -314,6 +318,54 @@ export default function Home() {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* GitHub Integration Section */}
+          <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center">
+              🔗 GitHub Integration
+            </h2>
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-6">
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Automate code reviews for your GitHub pull requests with AI-powered analysis
+                </p>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 dark:text-white mb-3">
+                    🔧 Setup Instructions
+                  </h3>
+                  <ol className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                    <li>1. Add webhook URL to your GitHub repository</li>
+                    <li>2. Configure <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">GITHUB_TOKEN</code> environment variable</li>
+                    <li>3. Set webhook events to &quot;Pull requests&quot;</li>
+                    <li>4. AI will automatically comment on new PRs</li>
+                  </ol>
+                </div>
+                
+                <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 dark:text-white mb-3">
+                    🎯 Features
+                  </h3>
+                  <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                    <li>• Automatic PR analysis on open/update</li>
+                    <li>• Multi-language code review</li>
+                    <li>• Quality scores and suggestions</li>
+                    <li>• Detailed markdown comments</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="mt-6 text-center">
+                <div className="inline-block bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    <strong>Webhook URL:</strong> <code className="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">{typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com'}/api/github/webhook</code>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+    "@octokit/rest": "^22.0.0",
     "axios": "^1.10.0",
     "lodash": "^4.17.21",
     "next": "15.4.1",
