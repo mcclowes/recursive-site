@@ -186,6 +186,9 @@ function getProjectRoadmap() {
     console.error('Error getting project roadmap:', error.message);
   }
   
+  return roadmap;
+}
+
 // Function to read important files (optimized for token usage)
 function readImportantFiles() {
   const importantFiles = [
@@ -230,54 +233,6 @@ function readImportantFiles() {
         
         const fileTokens = estimateTokens(content);
         if (totalTokens + fileTokens > MAX_TOKENS * 0.4) { // Use 40% of tokens for file contents
-          console.log(`⚠️ Stopping file reading to stay within token limits (${totalTokens} tokens used)`);
-          break;
-        }
-        
-        fileContents[file] = content;
-        totalTokens += fileTokens;
-      }
-    } catch (error) {
-      console.error(`Error reading ${file}:`, error.message);
-    }
-  }
-  
-  return fileContents;
-}
-  const importantFiles = [
-    'README.md',
-    'package.json',
-    'package-lock.json',
-    'yarn.lock',
-    'requirements.txt',
-    'Pipfile',
-    'pyproject.toml',
-    'Cargo.toml',
-    'go.mod',
-    'Gemfile',
-    'composer.json',
-    'docker-compose.yml',
-    'Dockerfile',
-    '.gitignore',
-    'LICENSE'
-  ];
-
-  const fileContents = {};
-  let totalTokens = 0;
-  
-  for (const file of importantFiles) {
-    try {
-      if (fs.existsSync(file)) {
-        let content = fs.readFileSync(file, 'utf8');
-        
-        // Limit file content to reduce tokens
-        const maxCharsPerFile = 500; // Reduced from 1000
-        if (content.length > maxCharsPerFile) {
-          content = content.substring(0, maxCharsPerFile) + '...';
-        }
-        
-        const fileTokens = estimateTokens(content);
-        if (totalTokens + fileTokens > MAX_TOKENS * 0.3) { // Use only 30% of tokens for file contents
           console.log(`⚠️ Stopping file reading to stay within token limits (${totalTokens} tokens used)`);
           break;
         }
