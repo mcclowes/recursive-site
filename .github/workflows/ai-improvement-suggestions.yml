@@ -79,7 +79,7 @@ jobs:
                     owner: context.repo.owner,
                     repo: context.repo.repo,
                     issue_number: issue.data.number,
-                    assignees: ['github-copilot']
+                    assignees: ['Copilot']
                   });
                   
                   console.log('✅ Assigned GitHub Copilot to the issue');
