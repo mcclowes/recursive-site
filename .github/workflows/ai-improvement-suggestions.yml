@@ -2,8 +2,10 @@ name: AI-Powered Feature Suggestion Generator
 
 on:
   schedule:
-    # Run every 30 minutes
-    - cron: '*/30 * * * *'
+    # Run every hour
+    - cron: '0 * * * *'
+  pull_request:
+    types: [closed]
   workflow_dispatch: # Allow manual triggering
 
 # Set permissions for the workflow
@@ -15,6 +17,8 @@ permissions:
 jobs:
   generate-improvement-suggestions:
     runs-on: ubuntu-latest
+    # Only run on schedule, manual trigger, or when a PR is merged
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     
     steps:
       - name: Checkout repository
