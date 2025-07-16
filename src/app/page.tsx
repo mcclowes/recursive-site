@@ -108,6 +108,17 @@ export default function Home() {
             <p className="text-lg text-gray-600 dark:text-gray-300">
               Get instant AI-powered code analysis and improvement suggestions
             </p>
+            <div className="mt-4">
+              <a
+                href="/self-analysis"
+                className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors mr-4"
+              >
+                🔄 Analyze This Project
+              </a>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                See how this tool analyzes its own code!
+              </span>
+            </div>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">

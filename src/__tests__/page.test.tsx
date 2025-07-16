@@ -7,46 +7,56 @@ describe('Home Page', () => {
     
     const heading = screen.getByRole('heading', { level: 1 })
     expect(heading).toBeInTheDocument()
-    expect(heading).toHaveTextContent('🤖 Recursive Site')
-  })
-
-  it('renders the welcome message', () => {
-    render(<Home />)
-    
-    const welcomeHeading = screen.getByRole('heading', { level: 2 })
-    expect(welcomeHeading).toBeInTheDocument()
-    expect(welcomeHeading).toHaveTextContent('Welcome to Your AI-Enhanced Site')
+    expect(heading).toHaveTextContent('🚀 AI Code Review Tool')
   })
 
   it('renders the description', () => {
     render(<Home />)
     
-    const description = screen.getByText('A NextJS web application with AI-powered improvement suggestions')
+    const description = screen.getByText('Get instant AI-powered code analysis and improvement suggestions')
     expect(description).toBeInTheDocument()
   })
 
-  it('renders the feature cards', () => {
+  it('renders the self-analysis link', () => {
     render(<Home />)
     
-    const modernStackCard = screen.getByText('🚀 Modern Stack')
-    const aiPoweredCard = screen.getByText('🤖 AI-Powered')
-    
-    expect(modernStackCard).toBeInTheDocument()
-    expect(aiPoweredCard).toBeInTheDocument()
+    const selfAnalysisLink = screen.getByRole('link', { name: '🔄 Analyze This Project' })
+    expect(selfAnalysisLink).toBeInTheDocument()
+    expect(selfAnalysisLink).toHaveAttribute('href', '/self-analysis')
   })
 
-  it('renders the documentation links', () => {
+  it('renders the code editor section', () => {
     render(<Home />)
     
-    const nextjsLink = screen.getByRole('link', { name: 'Next.js Docs' })
-    const tailwindLink = screen.getByRole('link', { name: 'Tailwind CSS' })
-    const typescriptLink = screen.getByRole('link', { name: 'TypeScript' })
+    const codeEditorHeading = screen.getByRole('heading', { name: 'Code Editor' })
+    expect(codeEditorHeading).toBeInTheDocument()
     
-    expect(nextjsLink).toBeInTheDocument()
-    expect(nextjsLink).toHaveAttribute('href', 'https://nextjs.org/docs')
-    expect(tailwindLink).toBeInTheDocument()
-    expect(tailwindLink).toHaveAttribute('href', 'https://tailwindcss.com/docs')
-    expect(typescriptLink).toBeInTheDocument()
-    expect(typescriptLink).toHaveAttribute('href', 'https://www.typescriptlang.org/docs')
+    const analyzeButton = screen.getByRole('button', { name: '🔍 Analyze Code' })
+    expect(analyzeButton).toBeInTheDocument()
+  })
+
+  it('renders the features section', () => {
+    render(<Home />)
+    
+    const featuresHeading = screen.getByRole('heading', { name: 'Features' })
+    expect(featuresHeading).toBeInTheDocument()
+    
+    const instantAnalysisFeature = screen.getByText('Instant Analysis')
+    const smartSuggestionsFeature = screen.getByText('Smart Suggestions')
+    const multipleLanguagesFeature = screen.getByText('Multiple Languages')
+    
+    expect(instantAnalysisFeature).toBeInTheDocument()
+    expect(smartSuggestionsFeature).toBeInTheDocument()
+    expect(multipleLanguagesFeature).toBeInTheDocument()
+  })
+
+  it('renders the language selector', () => {
+    render(<Home />)
+    
+    const languageSelector = screen.getByRole('combobox')
+    expect(languageSelector).toBeInTheDocument()
+    
+    // Check that JavaScript is the default selected option
+    expect(languageSelector).toHaveValue('javascript')
   })
 })
