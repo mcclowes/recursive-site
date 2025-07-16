@@ -251,7 +251,7 @@ function readImportantFiles() {
 // Function to check for existing similar issues
 async function checkForExistingIssues(suggestions) {
   try {
-    // Get recent issues with ai-suggestions label
+    // Get recent issues with ai-suggestion label
     const response = await axios.get('https://api.github.com/repos/mcclowes/recursive-site/issues', {
       headers: {
         'Authorization': `token ${GITHUB_TOKEN}`,
@@ -259,7 +259,7 @@ async function checkForExistingIssues(suggestions) {
       },
       params: {
         state: 'open',
-        labels: 'ai-suggestions',
+        labels: 'ai-suggestion',
         per_page: 10,
         sort: 'created',
         direction: 'desc'
@@ -428,15 +428,16 @@ ${Object.entries(fileContents).map(([file, content]) => {
 }).filter(Boolean).join('\n')}
 
 **YOUR TASK:**
-Generate 4-6 ADVANCED, SPECIFIC feature suggestions that would transform this basic code review tool into a professional-grade AI development platform. Focus on features that are:
+Generate ONE ADVANCED, SPECIFIC feature suggestion that would transform this basic code review tool into a professional-grade AI development platform. Focus on a feature that is:
 
 1. **Innovative & Cutting-edge**: Use latest AI technologies and modern development practices
-2. **High-impact**: Features that would make developers choose this over other tools
+2. **High-impact**: A feature that would make developers choose this over other tools
 3. **Technically feasible**: Can be implemented with current technology stack
 4. **Progressive**: Build upon existing features rather than replacing them
-5. **Professional-grade**: Features you'd expect in a commercial product
+5. **Professional-grade**: A feature you'd expect in a commercial product
+6. **Discrete**: A single, focused problem that can be solved independently
 
-**FOCUS AREAS:**
+**FOCUS AREAS (choose ONE):**
 - Real AI API integration (OpenAI, Claude, Gemini)
 - Advanced code analysis beyond basic rules
 - Developer workflow integration
@@ -445,16 +446,17 @@ Generate 4-6 ADVANCED, SPECIFIC feature suggestions that would transform this ba
 - Unique differentiating features
 
 **REQUIREMENTS:**
-- Each suggestion should be a significant feature (1-3 weeks implementation)
+- The suggestion should be a significant feature (1-3 weeks implementation)
 - Include specific technical implementation details
 - Provide code examples where relevant
 - Consider existing codebase and build upon it
-- Focus on features that would drive user adoption
+- Focus on a feature that would drive user adoption
+- Make it a single, discrete improvement that stands alone
 
 **OUTPUT FORMAT:**
 Use this exact format:
 
-# 🚀 AI Code Review Tool - Advanced Feature Suggestions
+# 🚀 AI Code Review Tool - Feature Suggestion
 
 ## 🎯 [Feature Name]
 
@@ -474,9 +476,12 @@ Use this exact format:
 
 **Priority:** [High/Medium/Low] - [Justification based on impact and feasibility]
 
----
+**Implementation Steps:**
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
 
-Make these suggestions exciting and innovative - features that would make developers genuinely excited to use this tool!
+Make this suggestion exciting and innovative - a feature that would make developers genuinely excited to use this tool!
 `;
 
   // Check token usage before making API call
@@ -501,7 +506,7 @@ Make these suggestions exciting and innovative - features that would make develo
           content: prompt
         }
       ],
-      max_tokens: 3000,
+      max_tokens: 1500,
       temperature: 0.8
     }, {
       headers: {
@@ -543,7 +548,7 @@ async function main() {
   console.log(`🗺️ Roadmap items found: ${roadmap.length}`);
   
   // Generate suggestions with enhanced context
-  console.log('🤖 Generating advanced AI-powered improvement suggestions...');
+  console.log('🤖 Generating AI-powered feature suggestion...');
   
   // Add feature and roadmap context to the analysis
   const enhancedAnalysis = {
@@ -568,9 +573,9 @@ async function main() {
     
     // Write suggestions to file
     fs.writeFileSync('.github/suggestions.txt', suggestions);
-    console.log('✅ Advanced AI suggestions generated and saved');
+    console.log('✅ AI feature suggestion generated and saved');
   } else {
-    console.log('❌ Failed to generate suggestions');
+    console.log('❌ Failed to generate suggestion');
     process.exit(1);
   }
 }
