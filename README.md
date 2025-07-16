@@ -1,5 +1,10 @@
 # AI Code Review Tool 🚀
 
+[![Next.js](https://img.shields.io/badge/Next.js-15.4.1-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![MIT License](https://img.shields.io/badge/License-ISC-yellow?style=for-the-badge)](./LICENSE)
+
 **Transform boring code into brilliant code with AI-powered insights!**
 
 An interactive Next.js application that provides instant code analysis, quality scoring, and improvement suggestions across multiple programming languages.
@@ -73,6 +78,8 @@ Instead of just another generic starter project, this has been transformed into 
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm run test` - Run Jest tests
+- `npm run test:watch` - Run Jest tests in watch mode
 
 ## 🎮 How to Use
 
@@ -90,6 +97,8 @@ Instead of just another generic starter project, this has been transformed into 
 - **Components**: Custom React components
 - **API**: Next.js API routes for code analysis
 - **Notifications**: React Hot Toast for user feedback
+- **Testing**: Jest with React Testing Library
+- **Code Quality**: ESLint with Next.js configuration
 
 ## 🤖 AI Integration
 
@@ -97,6 +106,21 @@ The application includes both:
 - **Built-in code analysis** with predefined rules and patterns
 - **AI-powered repository analysis** via GitHub Actions (existing feature)
 - **Extensible architecture** ready for additional AI integrations
+
+## 🧪 Testing
+
+Run the test suite to ensure everything works correctly:
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test -- --coverage
+```
 
 ## 📈 What's Next?
 
@@ -108,6 +132,21 @@ This foundation is ready for:
 - Performance benchmarking
 - Security vulnerability detection
 
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details on how to get started.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Run tests: `npm run test`
+5. Run linting: `npm run lint`
+6. Commit your changes: `git commit -m 'Add amazing feature'`
+7. Push to the branch: `git push origin feature/amazing-feature`
+8. Open a Pull Request
+
 ## 🚀 Deployment
 
 Deploy easily on:
@@ -116,9 +155,20 @@ Deploy easily on:
 - [Railway](https://railway.app)
 - Any Node.js hosting platform
 
+### Quick Deploy to Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/mcclowes/recursive-site)
+
 ## 📄 License
 
-This project is licensed under the ISC License.
+This project is licensed under the ISC License - see the [LICENSE](./LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Next.js](https://nextjs.org/)
+- Styled with [Tailwind CSS](https://tailwindcss.com/)
+- Icons and emojis for visual appeal
+- Community feedback and suggestions
 
 ---
 

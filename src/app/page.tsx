@@ -77,28 +77,38 @@ export default function Home() {
 
   const getSuggestionIcon = (type: string) => {
     switch (type) {
-      case 'warning': return '⚠️';
-      case 'info': return 'ℹ️';
-      case 'suggestion': return '💡';
-      case 'success': return '✅';
-      default: return '📝';
+      case 'warning':
+        return '⚠️';
+      case 'info':
+        return 'ℹ️';
+      case 'suggestion':
+        return '💡';
+      case 'success':
+        return '✅';
+      default:
+        return '📝';
     }
   };
 
   const getSuggestionColor = (type: string) => {
     switch (type) {
-      case 'warning': return 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20';
-      case 'info': return 'border-blue-400 bg-blue-50 dark:bg-blue-900/20';
-      case 'suggestion': return 'border-purple-400 bg-purple-50 dark:bg-purple-900/20';
-      case 'success': return 'border-green-400 bg-green-50 dark:bg-green-900/20';
-      default: return 'border-gray-400 bg-gray-50 dark:bg-gray-900/20';
+      case 'warning':
+        return 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20';
+      case 'info':
+        return 'border-blue-400 bg-blue-50 dark:bg-blue-900/20';
+      case 'suggestion':
+        return 'border-purple-400 bg-purple-50 dark:bg-purple-900/20';
+      case 'success':
+        return 'border-green-400 bg-green-50 dark:bg-green-900/20';
+      default:
+        return 'border-gray-400 bg-gray-50 dark:bg-gray-900/20';
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <Toaster position="top-right" />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
@@ -119,10 +129,10 @@ export default function Home() {
                 </h2>
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  onChange={e => setLanguage(e.target.value)}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {LANGUAGES.map((lang) => (
+                  {LANGUAGES.map(lang => (
                     <option key={lang.value} value={lang.value}>
                       {lang.label}
                     </option>
@@ -150,9 +160,7 @@ export default function Home() {
                     Analyzing...
                   </>
                 ) : (
-                  <>
-                    🔍 Analyze Code
-                  </>
+                  <>🔍 Analyze Code</>
                 )}
               </button>
             </div>
@@ -170,31 +178,41 @@ export default function Home() {
                     <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
                       {analysis.score}%
                     </div>
-                    <div className="text-gray-600 dark:text-gray-300">Code Quality Score</div>
+                    <div className="text-gray-600 dark:text-gray-300">
+                      Code Quality Score
+                    </div>
                   </div>
 
                   {/* Metrics */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Lines</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Lines
+                      </div>
                       <div className="text-lg font-semibold text-gray-800 dark:text-white">
                         {analysis.metrics.lines}
                       </div>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Complexity</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Complexity
+                      </div>
                       <div className="text-lg font-semibold text-gray-800 dark:text-white">
                         {analysis.metrics.complexity}
                       </div>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Characters</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Characters
+                      </div>
                       <div className="text-lg font-semibold text-gray-800 dark:text-white">
                         {analysis.metrics.characters}
                       </div>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Maintainability</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Maintainability
+                      </div>
                       <div className="text-lg font-semibold text-gray-800 dark:text-white">
                         {analysis.metrics.maintainability}
                       </div>
@@ -213,7 +231,9 @@ export default function Home() {
                           className={`p-3 rounded-lg border-l-4 ${getSuggestionColor(suggestion.type)}`}
                         >
                           <div className="flex items-start gap-2">
-                            <span className="text-lg">{getSuggestionIcon(suggestion.type)}</span>
+                            <span className="text-lg">
+                              {getSuggestionIcon(suggestion.type)}
+                            </span>
                             <div className="flex-1">
                               <div className="text-sm font-medium text-gray-800 dark:text-white">
                                 Line {suggestion.line}
@@ -231,12 +251,23 @@ export default function Home() {
               ) : (
                 <div className="text-center py-12">
                   <div className="text-gray-400 dark:text-gray-500 mb-4">
-                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-16 h-16 mx-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300">
-                    Enter your code and click &quot;Analyze Code&quot; to get started
+                    Enter your code and click &quot;Analyze Code&quot; to get
+                    started
                   </p>
                 </div>
               )}

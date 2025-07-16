@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "AI Code Review Tool - Instant Code Analysis",
-  description: "Transform your code with AI-powered analysis! Get instant quality scores, improvement suggestions, and real-time feedback for JavaScript, TypeScript, Python, Java, and more.",
+  title: 'AI Code Review Tool - Instant Code Analysis',
+  description:
+    'Transform your code with AI-powered analysis! Get instant quality scores, improvement suggestions, and real-time feedback for JavaScript, TypeScript, Python, Java, and more.',
 };
 
 export default function RootLayout({
@@ -13,9 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        {children}
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

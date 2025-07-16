@@ -1,14 +1,21 @@
 {
   "name": "recursive-site",
   "version": "0.1.0",
+  "description": "AI-powered code review tool providing instant analysis, quality scoring, and improvement suggestions for multiple programming languages",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "type-check": "tsc --noEmit",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -24,14 +31,27 @@
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.1",
+    "husky": "^9.1.7",
     "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.4",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.6.2",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "src/**/*.{json,css,md}": [
+      "prettier --write"
+    ]
   }
 }
