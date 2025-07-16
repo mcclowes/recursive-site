@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import SimpleCodeEditor from '@/components/SimpleCodeEditor';
+import RealtimeSuggestions from '@/components/RealtimeSuggestions';
 import toast, { Toaster } from 'react-hot-toast';
+import { debounce } from 'lodash';
 
 interface Suggestion {
   type: 'warning' | 'info' | 'suggestion' | 'success';
@@ -43,6 +45,60 @@ export default function Home() {
   const [language, setLanguage] = useState('javascript');
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(true);
+  const [realtimeSuggestions, setRealtimeSuggestions] = useState<Suggestion[]>([]);
+  const [isRealtimeAnalyzing, setIsRealtimeAnalyzing] = useState(false);
+  
+  // Debounced function for real-time analysis
+  const debouncedAnalysis = useCallback(
+    debounce(async (code: string, language: string) => {
+      if (isRealtimeEnabled && code.trim()) {
+        setIsRealtimeAnalyzing(true);
+        try {
+          const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code, language }),
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setRealtimeSuggestions(data.analysis.suggestions);
+          }
+        } catch (error) {
+          console.error('Real-time analysis error:', error);
+        } finally {
+          setIsRealtimeAnalyzing(false);
+        }
+      }
+    }, 1000),
+    [isRealtimeEnabled]
+  );
+
+  // Trigger real-time analysis when code changes
+  useEffect(() => {
+    if (isRealtimeEnabled) {
+      debouncedAnalysis(code, language);
+    }
+  }, [code, language, debouncedAnalysis, isRealtimeEnabled]);
+
+  // Handle code changes
+  const handleCodeChange = (newCode: string) => {
+    setCode(newCode);
+    if (!isRealtimeEnabled) {
+      setRealtimeSuggestions([]);
+    }
+  };
+
+  // Handle language changes
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+    if (isRealtimeEnabled) {
+      setRealtimeSuggestions([]);
+    }
+  };
 
   const analyzeCode = async () => {
     if (!code.trim()) {
@@ -112,49 +168,67 @@ export default function Home() {
 
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Code Editor Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-                  Code Editor
-                </h2>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+                    Code Editor
+                  </h2>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <input
+                        type="checkbox"
+                        checked={isRealtimeEnabled}
+                        onChange={(e) => setIsRealtimeEnabled(e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      Real-time Analysis
+                    </label>
+                    <select
+                      value={language}
+                      onChange={(e) => handleLanguageChange(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {LANGUAGES.map((lang) => (
+                        <option key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <SimpleCodeEditor
+                    value={code}
+                    onChange={handleCodeChange}
+                    language={language}
+                    height="400px"
+                  />
+                </div>
+
+                <button
+                  onClick={analyzeCode}
+                  disabled={isAnalyzing}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
-                  {LANGUAGES.map((lang) => (
-                    <option key={lang.value} value={lang.value}>
-                      {lang.label}
-                    </option>
-                  ))}
-                </select>
+                  {isAnalyzing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      🔍 Analyze Code
+                    </>
+                  )}
+                </button>
               </div>
 
-              <div className="mb-4">
-                <SimpleCodeEditor
-                  value={code}
-                  onChange={setCode}
-                  language={language}
-                  height="400px"
-                />
-              </div>
-
-              <button
-                onClick={analyzeCode}
-                disabled={isAnalyzing}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    🔍 Analyze Code
-                  </>
-                )}
-              </button>
+              {/* Real-time Suggestions */}
+              {isRealtimeEnabled && (
+                <RealtimeSuggestions suggestions={realtimeSuggestions} isConnected={!isRealtimeAnalyzing} />
+              )}
             </div>
 
             {/* Analysis Results Section */}

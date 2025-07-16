@@ -7,46 +7,46 @@ describe('Home Page', () => {
     
     const heading = screen.getByRole('heading', { level: 1 })
     expect(heading).toBeInTheDocument()
-    expect(heading).toHaveTextContent('🤖 Recursive Site')
-  })
-
-  it('renders the welcome message', () => {
-    render(<Home />)
-    
-    const welcomeHeading = screen.getByRole('heading', { level: 2 })
-    expect(welcomeHeading).toBeInTheDocument()
-    expect(welcomeHeading).toHaveTextContent('Welcome to Your AI-Enhanced Site')
+    expect(heading).toHaveTextContent('🚀 AI Code Review Tool')
   })
 
   it('renders the description', () => {
     render(<Home />)
     
-    const description = screen.getByText('A NextJS web application with AI-powered improvement suggestions')
+    const description = screen.getByText('Get instant AI-powered code analysis and improvement suggestions')
     expect(description).toBeInTheDocument()
+  })
+
+  it('renders the code editor section', () => {
+    render(<Home />)
+    
+    const codeEditorHeading = screen.getByText('Code Editor')
+    expect(codeEditorHeading).toBeInTheDocument()
+  })
+
+  it('renders the analysis results section', () => {
+    render(<Home />)
+    
+    const analysisResultsHeading = screen.getByText('Analysis Results')
+    expect(analysisResultsHeading).toBeInTheDocument()
   })
 
   it('renders the feature cards', () => {
     render(<Home />)
     
-    const modernStackCard = screen.getByText('🚀 Modern Stack')
-    const aiPoweredCard = screen.getByText('🤖 AI-Powered')
+    const instantAnalysisCard = screen.getByText('Instant Analysis')
+    const smartSuggestionsCard = screen.getByText('Smart Suggestions')
+    const multipleLanguagesCard = screen.getByText('Multiple Languages')
     
-    expect(modernStackCard).toBeInTheDocument()
-    expect(aiPoweredCard).toBeInTheDocument()
+    expect(instantAnalysisCard).toBeInTheDocument()
+    expect(smartSuggestionsCard).toBeInTheDocument()
+    expect(multipleLanguagesCard).toBeInTheDocument()
   })
 
-  it('renders the documentation links', () => {
+  it('renders the analyze button', () => {
     render(<Home />)
     
-    const nextjsLink = screen.getByRole('link', { name: 'Next.js Docs' })
-    const tailwindLink = screen.getByRole('link', { name: 'Tailwind CSS' })
-    const typescriptLink = screen.getByRole('link', { name: 'TypeScript' })
-    
-    expect(nextjsLink).toBeInTheDocument()
-    expect(nextjsLink).toHaveAttribute('href', 'https://nextjs.org/docs')
-    expect(tailwindLink).toBeInTheDocument()
-    expect(tailwindLink).toHaveAttribute('href', 'https://tailwindcss.com/docs')
-    expect(typescriptLink).toBeInTheDocument()
-    expect(typescriptLink).toHaveAttribute('href', 'https://www.typescriptlang.org/docs')
+    const analyzeButton = screen.getByRole('button', { name: /analyze code/i })
+    expect(analyzeButton).toBeInTheDocument()
   })
 })
