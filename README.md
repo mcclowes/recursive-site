@@ -80,6 +80,11 @@ The workflow analyzes:
 - Code patterns and modern best practices
 - Documentation and setup instructions
 
+**Duplicate Prevention**: The system intelligently detects similar existing issues and prevents creation of duplicates based on:
+- Content similarity analysis
+- Time-based weighting (older issues have less impact)
+- Topic extraction and comparison
+
 Generated issues include:
 - Specific improvement recommendations
 - Code quality enhancements

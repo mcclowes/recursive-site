@@ -107,6 +107,126 @@ function readImportantFiles() {
   return fileContents;
 }
 
+// Function to check for existing similar issues
+async function checkForExistingIssues(suggestions) {
+  try {
+    // Get recent issues with ai-suggestions label
+    const response = await axios.get('https://api.github.com/repos/mcclowes/recursive-site/issues', {
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      params: {
+        state: 'open',
+        labels: 'ai-suggestions',
+        per_page: 10,
+        sort: 'created',
+        direction: 'desc'
+      }
+    });
+
+    const recentIssues = response.data;
+    
+    if (recentIssues.length === 0) {
+      console.log('No existing AI suggestion issues found');
+      return false;
+    }
+
+    // Extract key topics from current suggestions
+    const currentTopics = extractTopics(suggestions);
+    
+    // Check each recent issue for similarity
+    for (const issue of recentIssues) {
+      const issueTopics = extractTopics(issue.body);
+      const similarity = calculateSimilarity(currentTopics, issueTopics);
+      
+      // Calculate time factor - more recent issues get higher weight
+      const issueDate = new Date(issue.created_at);
+      const now = new Date();
+      const daysSinceCreation = (now - issueDate) / (1000 * 60 * 60 * 24);
+      
+      // Adjust similarity based on recency (issues older than 7 days get lower weight)
+      const timeFactor = Math.max(0.5, 1 - (daysSinceCreation / 7));
+      const adjustedSimilarity = similarity * timeFactor;
+      
+      console.log(`Checking similarity with issue #${issue.number}: ${similarity.toFixed(2)} (adjusted: ${adjustedSimilarity.toFixed(2)}, days old: ${daysSinceCreation.toFixed(1)})`);
+      
+      // If adjusted similarity is above threshold, consider it a duplicate
+      if (adjustedSimilarity > 0.6) {
+        console.log(`⚠️ Similar issue found: #${issue.number} (adjusted similarity: ${adjustedSimilarity.toFixed(2)})`);
+        return true;
+      }
+    }
+    
+    console.log('✅ No similar issues found');
+    return false;
+  } catch (error) {
+    console.error('Error checking for existing issues:', error.message);
+    // If we can't check, allow creation to be safe
+    return false;
+  }
+}
+
+// Function to extract key topics from text
+function extractTopics(text) {
+  const topics = new Set();
+  
+  // Extract common improvement keywords
+  const keywords = [
+    'documentation', 'testing', 'linting', 'ci/cd', 'security', 'performance',
+    'code quality', 'structure', 'organization', 'readme', 'setup', 'dependencies',
+    'error handling', 'logging', 'monitoring', 'deployment', 'docker', 'dockerfile',
+    'github actions', 'workflow', 'automation', 'best practices', 'standards',
+    'refactoring', 'optimization', 'maintenance', 'scalability', 'reliability',
+    'eslint', 'prettier', 'jest', 'vitest', 'cypress', 'playwright', 'typescript',
+    'github pages', 'netlify', 'vercel', 'travis', 'circleci', 'github actions',
+    'docker compose', 'kubernetes', 'helm', 'terraform', 'ansible', 'chef', 'puppet'
+  ];
+  
+  const lowerText = text.toLowerCase();
+  
+  for (const keyword of keywords) {
+    if (lowerText.includes(keyword)) {
+      topics.add(keyword);
+    }
+  }
+  
+  // Also extract numbered suggestions (1., 2., etc.)
+  const numberedSuggestions = text.match(/\d+\.\s*([^\n]+)/g);
+  if (numberedSuggestions) {
+    numberedSuggestions.forEach(suggestion => {
+      const cleanSuggestion = suggestion.replace(/^\d+\.\s*/, '').toLowerCase();
+      topics.add(cleanSuggestion.substring(0, 50)); // First 50 chars of each suggestion
+    });
+  }
+  
+  // Extract section headers (## Header)
+  const headers = text.match(/##\s+([^\n]+)/g);
+  if (headers) {
+    headers.forEach(header => {
+      const cleanHeader = header.replace(/^##\s+/, '').toLowerCase();
+      topics.add(cleanHeader);
+    });
+  }
+  
+  return Array.from(topics);
+}
+
+// Function to calculate similarity between two sets of topics
+function calculateSimilarity(topics1, topics2) {
+  if (topics1.length === 0 || topics2.length === 0) {
+    return 0;
+  }
+  
+  const set1 = new Set(topics1);
+  const set2 = new Set(topics2);
+  
+  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const union = new Set([...set1, ...set2]);
+  
+  return intersection.size / union.size;
+}
+
 // Function to call OpenAI API
 async function generateSuggestions(repoInfo, analysis, fileContents) {
   const prompt = `
@@ -190,6 +310,17 @@ async function main() {
   const suggestions = await generateSuggestions(repoInfo, analysis, fileContents);
   
   if (suggestions) {
+    // Check for existing similar issues before creating new ones
+    console.log('🔍 Checking for existing similar issues...');
+    const hasSimilarIssues = await checkForExistingIssues(suggestions);
+    
+    if (hasSimilarIssues) {
+      console.log('⏭️ Skipping issue creation - similar issues already exist');
+      // Write a flag to indicate no new issue should be created
+      fs.writeFileSync('.github/skip-issue-creation.txt', 'true');
+      return;
+    }
+    
     // Write suggestions to file
     fs.writeFileSync('.github/suggestions.txt', suggestions);
     console.log('✅ Suggestions generated and saved');

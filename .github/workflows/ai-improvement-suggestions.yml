@@ -47,6 +47,14 @@ jobs:
             const fs = require('fs');
             
             try {
+              // Check if we should skip issue creation due to duplicates
+              const skipFile = '.github/skip-issue-creation.txt';
+              if (fs.existsSync(skipFile)) {
+                console.log('⏭️ Skipping issue creation - similar issues already exist');
+                fs.unlinkSync(skipFile); // Clean up the flag file
+                return;
+              }
+              
               const suggestions = fs.readFileSync('.github/suggestions.txt', 'utf8');
               
               if (suggestions.trim()) {
