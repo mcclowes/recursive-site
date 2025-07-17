@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import SimpleCodeEditor from '@/components/SimpleCodeEditor';
 import EnhancedCodeEditor from '@/components/EnhancedCodeEditor';
+import RefactoringSuggestions from '@/components/RefactoringSuggestions';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface ContextualSuggestion {
@@ -18,6 +19,22 @@ interface ContextualSuggestion {
   isInline: boolean;
   actionable: boolean;
   quickFix: string | null;
+}
+
+interface RefactoringSuggestion {
+  id: string;
+  title: string;
+  description: string;
+  reasoning: string;
+  type: string;
+  complexity: string;
+  impact: string;
+  beforeCode: string;
+  afterCode: string;
+  line: number;
+  estimatedTime: string;
+  isApplicable: boolean;
+  category: string;
 }
 
 interface Suggestion {
@@ -98,6 +115,10 @@ export default function Home() {
     PerformanceOptimization[]
   >([]);
   const [isOptimizingPerformance, setIsOptimizingPerformance] = useState(false);
+  const [refactoringSuggestions, setRefactoringSuggestions] = useState<
+    RefactoringSuggestion[]
+  >([]);
+  const [isLoadingRefactoring, setIsLoadingRefactoring] = useState(false);
 
   const handleContextualSuggestions = (suggestions: ContextualSuggestion[]) => {
     setContextualSuggestions(suggestions);
@@ -147,6 +168,49 @@ export default function Home() {
     } finally {
       setIsOptimizingPerformance(false);
     }
+  };
+
+  const getRefactoringSuggestions = async () => {
+    if (!code.trim()) {
+      toast.error('Please enter some code to analyze for refactoring');
+      return;
+    }
+
+    setIsLoadingRefactoring(true);
+    try {
+      const response = await fetch('/api/analyze/refactor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code, language }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get refactoring suggestions');
+      }
+
+      const data = await response.json();
+      setRefactoringSuggestions(data.suggestions);
+      toast.success('Refactoring suggestions generated!');
+    } catch (error) {
+      toast.error('Failed to get refactoring suggestions');
+      console.error('Error:', error);
+    } finally {
+      setIsLoadingRefactoring(false);
+    }
+  };
+
+  const handleApplyRefactoring = (suggestion: RefactoringSuggestion) => {
+    // For now, just show a toast. In a real implementation, this would apply the refactoring
+    toast.success(`Applied refactoring: ${suggestion.title}`);
+  };
+
+  const handleDismissRefactoring = (suggestionId: string) => {
+    setRefactoringSuggestions(prev =>
+      prev.filter(suggestion => suggestion.id !== suggestionId)
+    );
+    toast.success('Refactoring suggestion dismissed');
   };
 
   const analyzeCode = async () => {
@@ -392,7 +456,7 @@ export default function Home() {
               <button
                 onClick={optimizePerformance}
                 disabled={isOptimizingPerformance}
-                className='w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2'
+                className='w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 mb-3'
               >
                 {isOptimizingPerformance ? (
                   <>
@@ -401,6 +465,21 @@ export default function Home() {
                   </>
                 ) : (
                   <>🚀 Optimize Performance</>
+                )}
+              </button>
+
+              <button
+                onClick={getRefactoringSuggestions}
+                disabled={isLoadingRefactoring}
+                className='w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2'
+              >
+                {isLoadingRefactoring ? (
+                  <>
+                    <div className='animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent'></div>
+                    Analyzing...
+                  </>
+                ) : (
+                  <>🔄 Get Refactoring Suggestions</>
                 )}
               </button>
             </div>
@@ -460,6 +539,17 @@ export default function Home() {
                     </div>
                   )}
                   
+                  {/* Refactoring Suggestions */}
+                  {refactoringSuggestions.length > 0 && (
+                    <div className='bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800'>
+                      <RefactoringSuggestions
+                        suggestions={refactoringSuggestions}
+                        onApplySuggestion={handleApplyRefactoring}
+                        onDismissSuggestion={handleDismissRefactoring}
+                      />
+                    </div>
+                  )}
+
                   {/* Performance Optimization Suggestions */}
                   {performanceSuggestions.length > 0 && (
                     <div className='bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800'>
@@ -759,6 +849,15 @@ export default function Home() {
                 </p>
               </div>
               <div className='text-center'>
+                <div className='text-3xl mb-3'>🔄</div>
+                <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
+                  Intelligent Refactoring
+                </h3>
+                <p className='text-gray-600 dark:text-gray-300 text-sm'>
+                  AI-powered refactoring suggestions with before/after code examples
+                </p>
+              </div>
+              <div className='text-center'>
                 <div className='text-3xl mb-3'>🚀</div>
                 <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
                   Performance Optimization
@@ -784,15 +883,6 @@ export default function Home() {
                 </h3>
                 <p className='text-gray-600 dark:text-gray-300 text-sm'>
                   Get context-aware recommendations from advanced AI models
-                </p>
-              </div>
-              <div className='text-center'>
-                <div className='text-3xl mb-3'>🎯</div>
-                <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
-                  Multiple Languages
-                </h3>
-                <p className='text-gray-600 dark:text-gray-300 text-sm'>
-                  Support for JavaScript, TypeScript, Python, Java, and more
                 </p>
               </div>
             </div>

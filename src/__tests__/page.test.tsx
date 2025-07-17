@@ -68,12 +68,12 @@ describe('AI Code Review Tool', () => {
     render(<Home />);
 
     const instantAnalysis = screen.getByText('Instant Analysis');
+    const intelligentRefactoring = screen.getByText('Intelligent Refactoring');
     const aiPoweredSuggestions = screen.getByText('AI-Powered Suggestions');
-    const multipleLanguages = screen.getByText('Multiple Languages');
 
     expect(instantAnalysis).toBeInTheDocument();
+    expect(intelligentRefactoring).toBeInTheDocument();
     expect(aiPoweredSuggestions).toBeInTheDocument();
-    expect(multipleLanguages).toBeInTheDocument();
   });
 
   it('renders the analysis type indicators', () => {
