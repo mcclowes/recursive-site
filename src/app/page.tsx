@@ -4,6 +4,7 @@ import { useState } from 'react';
 import SimpleCodeEditor from '@/components/SimpleCodeEditor';
 import EnhancedCodeEditor from '@/components/EnhancedCodeEditor';
 import RefactoringSuggestions from '@/components/RefactoringSuggestions';
+import DocumentationSidebar from '@/components/DocumentationSidebar';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface ContextualSuggestion {
@@ -119,9 +120,14 @@ export default function Home() {
     RefactoringSuggestion[]
   >([]);
   const [isLoadingRefactoring, setIsLoadingRefactoring] = useState(false);
+  const [selectedCode, setSelectedCode] = useState<string>('');
 
   const handleContextualSuggestions = (suggestions: ContextualSuggestion[]) => {
     setContextualSuggestions(suggestions);
+  };
+
+  const handleCodeSelection = (selectedText: string) => {
+    setSelectedCode(selectedText);
   };
 
   const getSeverityColor = (severity: string) => {
@@ -386,7 +392,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className='grid lg:grid-cols-2 gap-8'>
+          <div className='grid xl:grid-cols-3 lg:grid-cols-2 gap-8'>
             {/* Code Editor Section */}
             <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6'>
               <div className='flex items-center justify-between mb-4'>
@@ -427,6 +433,7 @@ export default function Home() {
                     height='400px'
                     enableRealTimeAnalysis={true}
                     onSuggestionsChange={handleContextualSuggestions}
+                    onSelectionChange={handleCodeSelection}
                   />
                 ) : (
                   <SimpleCodeEditor
@@ -434,6 +441,7 @@ export default function Home() {
                     onChange={setCode}
                     language={language}
                     height='400px'
+                    onSelectionChange={handleCodeSelection}
                   />
                 )}
               </div>
@@ -831,6 +839,14 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* Documentation Sidebar */}
+            <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 xl:col-span-1 lg:col-span-2'>
+              <DocumentationSidebar
+                selectedCode={selectedCode}
+                language={language}
+              />
+            </div>
           </div>
 
           {/* Features Section */}
@@ -838,7 +854,7 @@ export default function Home() {
             <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center'>
               Features
             </h2>
-            <div className='grid md:grid-cols-5 gap-6'>
+            <div className='grid md:grid-cols-6 gap-6'>
               <div className='text-center'>
                 <div className='text-3xl mb-3'>🔍</div>
                 <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
@@ -883,6 +899,15 @@ export default function Home() {
                 </h3>
                 <p className='text-gray-600 dark:text-gray-300 text-sm'>
                   Get context-aware recommendations from advanced AI models
+                </p>
+              </div>
+              <div className='text-center'>
+                <div className='text-3xl mb-3'>📖</div>
+                <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
+                  Context-Aware Documentation
+                </h3>
+                <p className='text-gray-600 dark:text-gray-300 text-sm'>
+                  Get relevant documentation and resources based on selected code segments
                 </p>
               </div>
             </div>
