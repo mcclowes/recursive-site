@@ -235,10 +235,7 @@ describe('Home Page Integration', () => {
 
     render(<Home />);
 
-    // Switch to basic editor for testing
-    const basicEditorToggle = screen.getByText('🚀 Real-time AI');
-    fireEvent.click(basicEditorToggle);
-
+    // Basic editor should be default now
     const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, {
       target: { value: 'var x = 10;\nconsole.log(x);' },

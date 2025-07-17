@@ -28,13 +28,13 @@ interface EnhancedCodeEditorProps {
   onSuggestionsChange?: (suggestions: ContextualSuggestion[]) => void;
 }
 
-export default function EnhancedCodeEditor({ 
-  value, 
-  onChange, 
-  language, 
-  height = "400px",
+export default function EnhancedCodeEditor({
+  value,
+  onChange,
+  language,
+  height = '400px',
   enableRealTimeAnalysis = true,
-  onSuggestionsChange
+  onSuggestionsChange,
 }: EnhancedCodeEditorProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<ContextualSuggestion[]>([]);
@@ -45,117 +45,155 @@ export default function EnhancedCodeEditor({
   const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const showSuggestionNotification = (suggestions: ContextualSuggestion[]) => {
-    const highPriority = suggestions.filter(s => s.severity === 'error' || s.severity === 'warning');
+    const highPriority = suggestions.filter(
+      s => s.severity === 'error' || s.severity === 'warning'
+    );
     if (highPriority.length > 0) {
-      toast.success(`💡 ${highPriority.length} new contextual suggestion${highPriority.length > 1 ? 's' : ''} available!`, {
-        duration: 3000,
-        position: 'top-right',
-      });
+      toast.success(
+        `💡 ${highPriority.length} new contextual suggestion${highPriority.length > 1 ? 's' : ''} available!`,
+        {
+          duration: 3000,
+          position: 'top-right',
+        }
+      );
     }
   };
 
   const getSeverityColor = (severity: string): string => {
     switch (severity) {
-      case 'error': return '#ff5555';
-      case 'warning': return '#ffbb33';
-      case 'info': return '#3399ff';
-      case 'hint': return '#50fa7b';
-      default: return '#3399ff';
+      case 'error':
+        return '#ff5555';
+      case 'warning':
+        return '#ffbb33';
+      case 'info':
+        return '#3399ff';
+      case 'hint':
+        return '#50fa7b';
+      default:
+        return '#3399ff';
     }
   };
 
-  const updateEditorDecorations = useCallback((suggestions: ContextualSuggestion[]) => {
-    if (!editorRef.current || !monacoRef.current) return;
+  const updateEditorDecorations = useCallback(
+    (suggestions: ContextualSuggestion[]) => {
+      if (!editorRef.current || !monacoRef.current) return;
 
-    const editor = editorRef.current as { deltaDecorations: (prev: unknown[], decorations: unknown[]) => unknown[] };
-    const monaco = monacoRef.current as { Range: new (startLine: number, startColumn: number, endLine: number, endColumn: number) => unknown };
-
-    const decorations = suggestions.map((suggestion) => {
-      return {
-        range: new monaco.Range(
-          suggestion.line, 
-          suggestion.column, 
-          suggestion.line, 
-          suggestion.column + 10
-        ),
-        options: {
-          isWholeLine: false,
-          className: `suggestion-decoration ${suggestion.severity}`,
-          glyphMarginClassName: `suggestion-glyph ${suggestion.severity}`,
-          hoverMessage: { value: `${suggestion.message}\n\n${suggestion.explanation}` },
-          minimap: {
-            color: getSeverityColor(suggestion.severity),
-            position: 1
-          },
-          overviewRuler: {
-            color: getSeverityColor(suggestion.severity),
-            position: 1
-          }
-        }
+      const editor = editorRef.current as {
+        deltaDecorations: (
+          prev: unknown[],
+          decorations: unknown[]
+        ) => unknown[];
       };
-    });
+      const monaco = monacoRef.current as {
+        Range: new (
+          startLine: number,
+          startColumn: number,
+          endLine: number,
+          endColumn: number
+        ) => unknown;
+      };
 
-    // Clear previous decorations and add new ones
-    decorationsRef.current = editor.deltaDecorations(
-      decorationsRef.current,
-      decorations
-    );
-  }, []);
-
-  // Debounced function to fetch contextual suggestions
-  const fetchContextualSuggestions = useCallback(async (code: string) => {
-    if (!code.trim() || !enableRealTimeAnalysis) return;
-
-    setIsAnalyzing(true);
-    try {
-      const response = await fetch('/api/analyze/suggestions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ code, language }),
+      const decorations = suggestions.map(suggestion => {
+        return {
+          range: new monaco.Range(
+            suggestion.line,
+            suggestion.column,
+            suggestion.line,
+            suggestion.column + 10
+          ),
+          options: {
+            isWholeLine: false,
+            className: `suggestion-decoration ${suggestion.severity}`,
+            glyphMarginClassName: `suggestion-glyph ${suggestion.severity}`,
+            hoverMessage: {
+              value: `${suggestion.message}\n\n${suggestion.explanation}`,
+            },
+            minimap: {
+              color: getSeverityColor(suggestion.severity),
+              position: 1,
+            },
+            overviewRuler: {
+              color: getSeverityColor(suggestion.severity),
+              position: 1,
+            },
+          },
+        };
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get suggestions');
-      }
+      // Clear previous decorations and add new ones
+      decorationsRef.current = editor.deltaDecorations(
+        decorationsRef.current,
+        decorations
+      );
+    },
+    []
+  );
 
-      const data = await response.json();
-      const newSuggestions = data.suggestions || [];
-      
-      setSuggestions(newSuggestions);
-      onSuggestionsChange?.(newSuggestions);
-      
-      // Update editor decorations
-      updateEditorDecorations(newSuggestions);
-      
-      // Show notification for new suggestions
-      if (newSuggestions.length > 0) {
-        showSuggestionNotification(newSuggestions);
+  // Debounced function to fetch contextual suggestions
+  const fetchContextualSuggestions = useCallback(
+    async (code: string) => {
+      if (!code.trim() || !enableRealTimeAnalysis) return;
+
+      setIsAnalyzing(true);
+      try {
+        const response = await fetch('/api/analyze/suggestions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code, language }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to get suggestions');
+        }
+
+        const data = await response.json();
+        const newSuggestions = data.suggestions || [];
+
+        setSuggestions(newSuggestions);
+        onSuggestionsChange?.(newSuggestions);
+
+        // Update editor decorations
+        updateEditorDecorations(newSuggestions);
+
+        // Show notification for new suggestions
+        if (newSuggestions.length > 0) {
+          showSuggestionNotification(newSuggestions);
+        }
+      } catch (error) {
+        console.error('Error fetching contextual suggestions:', error);
+      } finally {
+        setIsAnalyzing(false);
       }
-    } catch (error) {
-      console.error('Error fetching contextual suggestions:', error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [language, enableRealTimeAnalysis, onSuggestionsChange, updateEditorDecorations]);
+    },
+    [
+      language,
+      enableRealTimeAnalysis,
+      onSuggestionsChange,
+      updateEditorDecorations,
+    ]
+  );
 
   // Debounced analysis trigger
-  const triggerAnalysis = useCallback((code: string) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    
-    debounceTimerRef.current = setTimeout(() => {
-      fetchContextualSuggestions(code);
-    }, 1500); // 1.5 second debounce
-  }, [fetchContextualSuggestions]);
+  const triggerAnalysis = useCallback(
+    (code: string) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(() => {
+        fetchContextualSuggestions(code);
+      }, 1500); // 1.5 second debounce
+    },
+    [fetchContextualSuggestions]
+  );
 
   const handleEditorDidMount = (editor: unknown, monaco: unknown) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
     setIsLoading(false);
-    
+
     // Initial analysis
     if (value.trim() && enableRealTimeAnalysis) {
       triggerAnalysis(value);
@@ -165,7 +203,7 @@ export default function EnhancedCodeEditor({
   const handleEditorChange = (newValue: string | undefined) => {
     const code = newValue || '';
     onChange(code);
-    
+
     // Trigger real-time analysis
     if (enableRealTimeAnalysis) {
       triggerAnalysis(code);
@@ -182,12 +220,14 @@ export default function EnhancedCodeEditor({
   }, []);
 
   return (
-    <div className="relative border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+    <div className='relative border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden'>
       {/* Real-time analysis indicator */}
       {enableRealTimeAnalysis && (
-        <div className="absolute top-2 right-2 z-10 flex items-center gap-2 bg-white dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-600">
-          <div className={`w-2 h-2 rounded-full ${isAnalyzing ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></div>
-          <span className="text-xs text-gray-600 dark:text-gray-400">
+        <div className='absolute top-2 right-2 z-10 flex items-center gap-2 bg-white dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-600'>
+          <div
+            className={`w-2 h-2 rounded-full ${isAnalyzing ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}
+          ></div>
+          <span className='text-xs text-gray-600 dark:text-gray-400'>
             {isAnalyzing ? 'Analyzing...' : 'Live Analysis'}
           </span>
         </div>
@@ -195,8 +235,10 @@ export default function EnhancedCodeEditor({
 
       {/* Loading state */}
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-10">
-          <div className="text-gray-500 dark:text-gray-400">Loading editor...</div>
+        <div className='absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-10'>
+          <div className='text-gray-500 dark:text-gray-400'>
+            Loading editor...
+          </div>
         </div>
       )}
 
@@ -207,10 +249,14 @@ export default function EnhancedCodeEditor({
         value={value}
         onChange={handleEditorChange}
         onMount={handleEditorDidMount}
-        theme="vs-dark"
-        loading={<div className="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-800">
-          <div className="text-gray-500 dark:text-gray-400">Loading Monaco Editor...</div>
-        </div>}
+        theme='vs-dark'
+        loading={
+          <div className='flex items-center justify-center h-full bg-gray-100 dark:bg-gray-800'>
+            <div className='text-gray-500 dark:text-gray-400'>
+              Loading Monaco Editor...
+            </div>
+          </div>
+        }
         options={{
           minimap: { enabled: true },
           scrollBeyondLastLine: false,
@@ -229,36 +275,38 @@ export default function EnhancedCodeEditor({
           quickSuggestions: {
             other: true,
             comments: true,
-            strings: true
+            strings: true,
           },
           suggestOnTriggerCharacters: true,
           acceptSuggestionOnEnter: 'on',
           tabCompletion: 'on',
           wordBasedSuggestions: 'matchingDocuments',
           parameterHints: {
-            enabled: true
-          }
+            enabled: true,
+          },
         }}
       />
 
       {/* Contextual Suggestions Panel */}
       {suggestions.length > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-600 max-h-32 overflow-y-auto">
-          <div className="p-2">
-            <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+        <div className='absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-600 max-h-32 overflow-y-auto'>
+          <div className='p-2'>
+            <div className='text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1'>
               Contextual Suggestions ({suggestions.length})
             </div>
-            <div className="space-y-1">
-              {suggestions.slice(0, 3).map((suggestion) => (
+            <div className='space-y-1'>
+              {suggestions.slice(0, 3).map(suggestion => (
                 <div
                   key={suggestion.id}
-                  className="flex items-center gap-2 p-1 rounded text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className='flex items-center gap-2 p-1 rounded text-xs hover:bg-gray-100 dark:hover:bg-gray-700'
                 >
-                  <div className={`w-2 h-2 rounded-full ${getSeverityColor(suggestion.severity)}`}></div>
-                  <span className="text-gray-700 dark:text-gray-300">
+                  <div
+                    className={`w-2 h-2 rounded-full ${getSeverityColor(suggestion.severity)}`}
+                  ></div>
+                  <span className='text-gray-700 dark:text-gray-300'>
                     Line {suggestion.line}: {suggestion.message}
                   </span>
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className='text-gray-500 dark:text-gray-400'>
                     ({Math.round(suggestion.confidence * 100)}%)
                   </span>
                 </div>

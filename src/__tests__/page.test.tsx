@@ -33,7 +33,7 @@ describe('AI Code Review Tool', () => {
     expect(codeEditorHeading).toBeInTheDocument();
 
     // Check for enhanced editor toggle
-    const enhancedToggle = screen.getByText('🚀 Real-time AI');
+    const enhancedToggle = screen.getByText('📝 Basic Editor');
     expect(enhancedToggle).toBeInTheDocument();
   });
 
@@ -89,10 +89,7 @@ describe('AI Code Review Tool', () => {
   it('updates code when textarea changes', () => {
     render(<Home />);
 
-    // Switch to basic editor to access textarea
-    const basicEditorToggle = screen.getByText('🚀 Real-time AI');
-    fireEvent.click(basicEditorToggle);
-
+    // Basic editor should be default now
     const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, { target: { value: 'console.log("test");' } });
 

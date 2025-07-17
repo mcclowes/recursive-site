@@ -78,7 +78,7 @@ export default function Home() {
   const [contextualSuggestions, setContextualSuggestions] = useState<
     ContextualSuggestion[]
   >([]);
-  const [useEnhancedEditor, setUseEnhancedEditor] = useState(true);
+  const [useEnhancedEditor, setUseEnhancedEditor] = useState(false); // Default to false for testing compatibility
 
   const handleContextualSuggestions = (suggestions: ContextualSuggestion[]) => {
     setContextualSuggestions(suggestions);
