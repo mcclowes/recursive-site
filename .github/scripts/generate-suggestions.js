@@ -289,7 +289,7 @@ async function checkForExistingIssues(suggestions) {
         params: {
           state: 'open',
           labels: 'ai-suggestion',
-          per_page: 10,
+          per_page: 15, // Increased to check more issues
           sort: 'created',
           direction: 'desc',
         },
@@ -303,31 +303,66 @@ async function checkForExistingIssues(suggestions) {
       return false;
     }
 
-    // Extract key topics from current suggestions
-    const currentTopics = extractTopics(suggestions);
+    // Extract topics and categories from current suggestions
+    const currentTopicData = extractTopics(suggestions);
+    console.log('Current suggestion categories:', currentTopicData.categories);
+    console.log(
+      'Current suggestion topics:',
+      currentTopicData.topics.slice(0, 10)
+    ); // Show first 10 topics
 
     // Check each recent issue for similarity
     for (const issue of recentIssues) {
-      const issueTopics = extractTopics(issue.body);
-      const similarity = calculateSimilarity(currentTopics, issueTopics);
+      const issueTopicData = extractTopics(issue.body);
+      const similarity = calculateSimilarity(currentTopicData, issueTopicData);
 
       // Calculate time factor - more recent issues get higher weight
       const issueDate = new Date(issue.created_at);
       const now = new Date();
       const daysSinceCreation = (now - issueDate) / (1000 * 60 * 60 * 24);
 
-      // Adjust similarity based on recency (issues older than 7 days get lower weight)
-      const timeFactor = Math.max(0.5, 1 - daysSinceCreation / 7);
+      // Adjust similarity based on recency (issues older than 14 days get lower weight)
+      const timeFactor = Math.max(0.3, 1 - daysSinceCreation / 14);
       const adjustedSimilarity = similarity * timeFactor;
 
-      console.log(
-        `Checking similarity with issue #${issue.number}: ${similarity.toFixed(2)} (adjusted: ${adjustedSimilarity.toFixed(2)}, days old: ${daysSinceCreation.toFixed(1)})`
+      console.log(`Checking similarity with issue #${issue.number}:`);
+      console.log(`  Title: ${issue.title}`);
+      console.log(`  Categories: ${issueTopicData.categories.join(', ')}`);
+      console.log(`  Raw similarity: ${similarity.toFixed(3)}`);
+      console.log(`  Adjusted similarity: ${adjustedSimilarity.toFixed(3)}`);
+      console.log(`  Days old: ${daysSinceCreation.toFixed(1)}`);
+
+      // More aggressive similarity threshold for better duplicate detection
+      // Different thresholds based on category overlap
+      const categoryOverlap = new Set(
+        [...currentTopicData.categories].filter(x =>
+          issueTopicData.categories.includes(x)
+        )
       );
 
-      // If adjusted similarity is above threshold, consider it a duplicate
-      if (adjustedSimilarity > 0.6) {
+      let similarityThreshold = 0.5; // Default threshold
+
+      // If both issues are about AI + Refactoring, use stricter threshold
+      if (
+        categoryOverlap.has('AI_INTEGRATION') &&
+        categoryOverlap.has('CODE_REFACTORING')
+      ) {
+        similarityThreshold = 0.4;
+      }
+
+      // If both issues are about the same core feature category, use stricter threshold
+      if (categoryOverlap.size >= 2) {
+        similarityThreshold = 0.45;
+      }
+
+      console.log(
+        `  Category overlap: ${Array.from(categoryOverlap).join(', ')}`
+      );
+      console.log(`  Similarity threshold: ${similarityThreshold}`);
+
+      if (adjustedSimilarity > similarityThreshold) {
         console.log(
-          `⚠️ Similar issue found: #${issue.number} (adjusted similarity: ${adjustedSimilarity.toFixed(2)})`
+          `⚠️ Similar issue found: #${issue.number} (adjusted similarity: ${adjustedSimilarity.toFixed(3)}, threshold: ${similarityThreshold})`
         );
         return true;
       }
@@ -342,118 +377,341 @@ async function checkForExistingIssues(suggestions) {
   }
 }
 
-// Function to extract key topics from text
+// Define feature categories for better similarity detection
+const FEATURE_CATEGORIES = {
+  AI_INTEGRATION: {
+    keywords: [
+      'ai integration',
+      'openai',
+      'claude',
+      'gemini',
+      'machine learning',
+      'neural network',
+      'artificial intelligence',
+      'ai-powered',
+      'ai-driven',
+      'intelligent',
+      'smart',
+      'context-aware',
+      'llm',
+      'language model',
+    ],
+    weight: 3.0,
+  },
+  CODE_REFACTORING: {
+    keywords: [
+      'refactoring',
+      'code improvement',
+      'code restructuring',
+      'code optimization',
+      'code quality',
+      'code enhancement',
+      'code cleanup',
+      'code transformation',
+      'improve code',
+      'optimize code',
+      'clean code',
+      'code suggestions',
+      'code recommendations',
+    ],
+    weight: 2.5,
+  },
+  CODE_ANALYSIS: {
+    keywords: [
+      'code review',
+      'static analysis',
+      'code analysis',
+      'code scanning',
+      'code inspection',
+      'code validation',
+      'code checking',
+      'linting',
+      'code metrics',
+      'quality metrics',
+      'complexity analysis',
+      'maintainability',
+    ],
+    weight: 2.0,
+  },
+  EDITOR_FEATURES: {
+    keywords: [
+      'monaco editor',
+      'code editor',
+      'syntax highlighting',
+      'autocomplete',
+      'intellisense',
+      'editor enhancement',
+      'text editor',
+      'code formatting',
+      'editor ui',
+      'editor interface',
+    ],
+    weight: 2.0,
+  },
+  REAL_TIME_FEATURES: {
+    keywords: [
+      'real-time analysis',
+      'live analysis',
+      'real-time updates',
+      'instant feedback',
+      'live suggestions',
+      'real-time processing',
+      'continuous analysis',
+      'live coding',
+      'real-time collaboration',
+    ],
+    weight: 2.0,
+  },
+  COLLABORATION: {
+    keywords: [
+      'collaboration',
+      'team features',
+      'team collaboration',
+      'sharing',
+      'collaborative editing',
+      'team workflow',
+      'team integration',
+      'multi-user',
+      'shared workspace',
+    ],
+    weight: 2.0,
+  },
+  WORKFLOW_INTEGRATION: {
+    keywords: [
+      'workflow integration',
+      'api integration',
+      'github integration',
+      'version control',
+      'pull requests',
+      'ci/cd',
+      'deployment',
+      'automation',
+      'pipeline integration',
+    ],
+    weight: 2.0,
+  },
+  UI_UX: {
+    keywords: [
+      'user interface',
+      'user experience',
+      'ui enhancement',
+      'ux improvement',
+      'interface design',
+      'responsive design',
+      'accessibility',
+      'usability',
+      'frontend',
+      'dashboard',
+    ],
+    weight: 1.5,
+  },
+  PERFORMANCE: {
+    keywords: [
+      'performance optimization',
+      'scalability',
+      'speed improvement',
+      'optimization',
+      'efficiency',
+      'performance enhancement',
+      'faster analysis',
+      'performance metrics',
+    ],
+    weight: 1.5,
+  },
+  SECURITY: {
+    keywords: [
+      'security scanning',
+      'vulnerability detection',
+      'security analysis',
+      'security features',
+      'authentication',
+      'authorization',
+      'security enhancement',
+      'secure coding',
+    ],
+    weight: 1.5,
+  },
+};
+
+// Function to extract key topics and categorize them
 function extractTopics(text) {
   const topics = new Set();
-
-  // Extract AI and feature-specific keywords
-  const keywords = [
-    'ai integration',
-    'openai',
-    'claude',
-    'gemini',
-    'machine learning',
-    'neural network',
-    'real-time analysis',
-    'code review',
-    'static analysis',
-    'security scanning',
-    'collaboration',
-    'team features',
-    'workflow integration',
-    'api integration',
-    'performance optimization',
-    'scalability',
-    'monitoring',
-    'analytics',
-    'authentication',
-    'authorization',
-    'deployment',
-    'ci/cd',
-    'testing',
-    'documentation',
-    'typescript',
-    'next.js',
-    'react',
-    'tailwind',
-    'monaco editor',
-    'code editor',
-    'syntax highlighting',
-    'autocomplete',
-    'linting',
-    'formatting',
-    'refactoring',
-    'code quality',
-    'metrics',
-    'github integration',
-    'version control',
-    'pull requests',
-    'code diff',
-    'plugin system',
-    'extensibility',
-    'customization',
-    'themes',
-    'mobile support',
-    'responsive design',
-    'accessibility',
-    'offline mode',
-    'websockets',
-    'real-time updates',
-    'notifications',
-    'alerts',
-    'dashboard',
-    'reporting',
-    'insights',
-    'visualizations',
-    'charts',
-  ];
+  const categories = new Set();
 
   const lowerText = text.toLowerCase();
 
-  for (const keyword of keywords) {
-    if (lowerText.includes(keyword)) {
-      topics.add(keyword);
+  // Extract feature categories with weights
+  for (const [categoryName, categoryData] of Object.entries(
+    FEATURE_CATEGORIES
+  )) {
+    for (const keyword of categoryData.keywords) {
+      if (lowerText.includes(keyword)) {
+        topics.add(keyword);
+        categories.add(categoryName);
+      }
     }
   }
 
-  // Extract feature names from markdown headers
+  // Extract feature names from markdown headers (main feature titles)
   const featureHeaders = text.match(/##\s+🎯\s+([^\n]+)/g);
   if (featureHeaders) {
     featureHeaders.forEach(header => {
       const cleanHeader = header.replace(/^##\s+🎯\s+/, '').toLowerCase();
-      topics.add(cleanHeader);
-    });
-  }
-
-  // Extract technical terms from code blocks
-  const codeBlocks = text.match(/```[\s\S]*?```/g);
-  if (codeBlocks) {
-    codeBlocks.forEach(block => {
-      const techTerms = block.match(
-        /\b(async|await|fetch|api|openai|claude|websocket|mongodb|redis|jwt|oauth|docker|kubernetes|terraform|aws|azure|gcp)\b/gi
-      );
-      if (techTerms) {
-        techTerms.forEach(term => topics.add(term.toLowerCase()));
+      // Normalize common feature variations
+      const normalizedHeader = normalizeFeatureName(cleanHeader);
+      topics.add(normalizedHeader);
+      // Try to categorize this feature
+      for (const [categoryName, categoryData] of Object.entries(
+        FEATURE_CATEGORIES
+      )) {
+        if (categoryData.keywords.some(kw => normalizedHeader.includes(kw))) {
+          categories.add(categoryName);
+        }
       }
     });
   }
 
-  // Extract impact and priority indicators
-  const impactPriority = text.match(/\*\*(Impact|Priority):\*\*\s*([^\n]+)/g);
-  if (impactPriority) {
-    impactPriority.forEach(item => {
-      const cleanItem = item
-        .replace(/\*\*(Impact|Priority):\*\*\s*/, '')
-        .toLowerCase();
-      topics.add(cleanItem.substring(0, 30));
+  // Extract feature names from bullet points (secondary features)
+  const featureBullets = text.match(/•\s+([^\n]+)/g);
+  if (featureBullets) {
+    featureBullets.forEach(bullet => {
+      const cleanBullet = bullet.replace(/^•\s+/, '').toLowerCase();
+      const normalizedBullet = normalizeFeatureName(cleanBullet);
+      topics.add(normalizedBullet);
+      // Try to categorize this feature
+      for (const [categoryName, categoryData] of Object.entries(
+        FEATURE_CATEGORIES
+      )) {
+        if (categoryData.keywords.some(kw => normalizedBullet.includes(kw))) {
+          categories.add(categoryName);
+        }
+      }
     });
   }
 
-  return Array.from(topics);
+  // Extract code-related terms
+  const codeTerms = text.match(/`([^`]+)`/g);
+  if (codeTerms) {
+    codeTerms.forEach(term => {
+      const cleanTerm = term.replace(/`/g, '').toLowerCase();
+      topics.add(cleanTerm);
+    });
+  }
+
+  console.log(
+    `Extracted ${topics.size} topics and ${categories.size} categories from text`
+  );
+  return { topics: Array.from(topics), categories: Array.from(categories) };
 }
 
-// Function to calculate similarity between two sets of topics
-function calculateSimilarity(topics1, topics2) {
+// Function to normalize feature names to catch similar variations
+function normalizeFeatureName(featureName) {
+  const normalizations = {
+    'ai-powered code refactoring': 'code refactoring',
+    'ai-driven code refactoring': 'code refactoring',
+    'intelligent code refactoring': 'code refactoring',
+    'smart code refactoring': 'code refactoring',
+    'context-aware code improvement': 'code improvement',
+    'ai-powered refactoring': 'refactoring',
+    'contextual ai code review': 'code review',
+    'ai code review assistant': 'code review',
+    'contextual ai-powered feedback': 'feedback system',
+    'ai-powered code improvement': 'code improvement',
+  };
+
+  for (const [variation, normalized] of Object.entries(normalizations)) {
+    if (featureName.includes(variation)) {
+      return normalized;
+    }
+  }
+
+  return featureName;
+}
+
+// Function to categorize a feature based on its name
+function categorizeFeature(featureName) {
+  if (featureName.includes('refactor')) return 'CODE_REFACTORING';
+  if (
+    featureName.includes('ai') ||
+    featureName.includes('intelligent') ||
+    featureName.includes('smart')
+  )
+    return 'AI_INTEGRATION';
+  if (featureName.includes('review') || featureName.includes('analysis'))
+    return 'CODE_ANALYSIS';
+  if (featureName.includes('editor')) return 'EDITOR_FEATURES';
+  if (featureName.includes('collaboration') || featureName.includes('team'))
+    return 'COLLABORATION';
+  if (featureName.includes('real-time') || featureName.includes('live'))
+    return 'REAL_TIME_FEATURES';
+  if (featureName.includes('ui') || featureName.includes('interface'))
+    return 'UI_UX';
+  if (
+    featureName.includes('performance') ||
+    featureName.includes('optimization')
+  )
+    return 'PERFORMANCE';
+  if (featureName.includes('security')) return 'SECURITY';
+  return null;
+}
+
+// Function to calculate similarity between two topic extractions
+function calculateSimilarity(topicData1, topicData2) {
+  if (!topicData1 || !topicData2) {
+    return 0;
+  }
+
+  // Calculate category-based similarity (most important)
+  const categorySimilarity = calculateCategorySimilarity(
+    topicData1.categories,
+    topicData2.categories
+  );
+
+  // Calculate topic-based similarity (traditional approach)
+  const topicSimilarity = calculateTopicSimilarity(
+    topicData1.topics,
+    topicData2.topics
+  );
+
+  // Calculate weighted similarity
+  // Category similarity is more important for detecting feature overlap
+  const weightedSimilarity = categorySimilarity * 0.7 + topicSimilarity * 0.3;
+
+  return weightedSimilarity;
+}
+
+// Function to calculate similarity based on feature categories
+function calculateCategorySimilarity(categories1, categories2) {
+  if (categories1.length === 0 || categories2.length === 0) {
+    return 0;
+  }
+
+  const set1 = new Set(categories1);
+  const set2 = new Set(categories2);
+
+  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const union = new Set([...set1, ...set2]);
+
+  let similarityScore = intersection.size / union.size;
+
+  // Apply category-specific weights
+  // If both issues are in high-weight categories (like AI_INTEGRATION + CODE_REFACTORING),
+  // they are more likely to be duplicates
+  let weightMultiplier = 1.0;
+  const highImpactOverlap = [...intersection].filter(
+    category =>
+      FEATURE_CATEGORIES[category] && FEATURE_CATEGORIES[category].weight >= 2.0
+  );
+
+  if (highImpactOverlap.length > 0) {
+    weightMultiplier = 1.0 + highImpactOverlap.length * 0.2;
+  }
+
+  return Math.min(similarityScore * weightMultiplier, 1.0);
+}
+
+// Function to calculate traditional topic similarity
+function calculateTopicSimilarity(topics1, topics2) {
   if (topics1.length === 0 || topics2.length === 0) {
     return 0;
   }
@@ -502,6 +760,13 @@ ${Object.entries(analysis.currentFeatures)
 **EXISTING ROADMAP ITEMS:**
 ${analysis.roadmap.length > 0 ? analysis.roadmap.map(item => `- ${item}`).join('\n') : '- No explicit roadmap items found'}
 
+**IMPORTANT: AVOID THESE OVER-SUGGESTED FEATURES:**
+Recent AI suggestions have been too focused on similar themes. Please AVOID suggesting features that are primarily about:
+- AI-powered code refactoring (already suggested many times)
+- General AI code review assistance 
+- Basic code improvement suggestions
+- Simple OpenAI API integration for code analysis
+
 **CURRENT TECH STACK (from analysis):**
 ${Object.entries(fileContents)
   .map(([file, content]) => {
@@ -517,22 +782,29 @@ ${Object.entries(fileContents)
   .join('\n')}
 
 **YOUR TASK:**
-Generate ONE ADVANCED, SPECIFIC feature suggestion that would transform this basic code review tool into a professional-grade AI development platform. Focus on a feature that is:
+Generate ONE UNIQUE, DIVERSE feature suggestion that would transform this basic code review tool into a professional-grade AI development platform. Focus on a feature that is:
 
 1. **Innovative & Cutting-edge**: Use latest AI technologies and modern development practices
-2. **High-impact**: A feature that would make developers choose this over other tools
-3. **Technically feasible**: Can be implemented with current technology stack
-4. **Progressive**: Build upon existing features rather than replacing them
-5. **Professional-grade**: A feature you'd expect in a commercial product
-6. **Discrete**: A single, focused problem that can be solved independently
+2. **Unique & Diverse**: NOT about basic code refactoring or simple AI code review
+3. **High-impact**: A feature that would make developers choose this over other tools
+4. **Technically feasible**: Can be implemented with current technology stack
+5. **Progressive**: Build upon existing features rather than replacing them
+6. **Professional-grade**: A feature you'd expect in a commercial product
+7. **Discrete**: A single, focused problem that can be solved independently
 
-**FOCUS AREAS (choose ONE):**
-- Real AI API integration (OpenAI, Claude, Gemini)
-- Advanced code analysis beyond basic rules
-- Developer workflow integration
-- Collaboration and team features
-- Performance and scalability improvements
-- Unique differentiating features
+**DIVERSE FOCUS AREAS (choose ONE unique area):**
+- Advanced developer analytics and insights
+- Team collaboration and knowledge sharing
+- Code security and vulnerability detection
+- Performance monitoring and optimization
+- Developer onboarding and learning assistance
+- Project management and workflow automation
+- Code documentation and API generation
+- Testing and quality assurance automation
+- Multi-repository and enterprise features
+- Developer productivity and time tracking
+- Code deployment and infrastructure management
+- Custom plugin and extension system
 
 **REQUIREMENTS:**
 - The suggestion should be a significant feature (1-3 weeks implementation)
@@ -541,6 +813,7 @@ Generate ONE ADVANCED, SPECIFIC feature suggestion that would transform this bas
 - Consider existing codebase and build upon it
 - Focus on a feature that would drive user adoption
 - Make it a single, discrete improvement that stands alone
+- BE CREATIVE and suggest something NOT commonly seen in other code review tools
 
 **OUTPUT FORMAT:**
 Use this exact format:
@@ -549,7 +822,7 @@ Use this exact format:
 
 ## 🎯 [Feature Name]
 
-**Impact:** [Brief description of the value this brings to developers]
+**Impact:** [Brief description of the unique value this brings to developers]
 
 **Technical Implementation:**
 [Detailed technical approach, including specific technologies, APIs, and architecture]
@@ -570,7 +843,7 @@ Use this exact format:
 2. [Step 2]
 3. [Step 3]
 
-Make this suggestion exciting and innovative - a feature that would make developers genuinely excited to use this tool!
+Make this suggestion exciting, innovative, and DIFFERENT from typical code review features!
 `;
 
   // Check token usage before making API call
@@ -593,7 +866,7 @@ Make this suggestion exciting and innovative - a feature that would make develop
           {
             role: 'system',
             content:
-              'You are a senior software architect and AI specialist who creates detailed, innovative feature suggestions for developer tools. You focus on cutting-edge AI capabilities, modern development practices, and features that would genuinely excite developers.',
+              'You are a senior software architect and AI specialist who creates detailed, innovative, and DIVERSE feature suggestions for developer tools. You avoid suggesting repetitive features and focus on unique, cutting-edge capabilities that would genuinely excite developers and differentiate the tool from competitors.',
           },
           {
             role: 'user',
@@ -601,7 +874,7 @@ Make this suggestion exciting and innovative - a feature that would make develop
           },
         ],
         max_tokens: 1500,
-        temperature: 0.8,
+        temperature: 0.9, // Increased temperature for more creative, diverse suggestions
       },
       {
         headers: {

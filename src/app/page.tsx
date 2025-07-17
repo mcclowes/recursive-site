@@ -2,7 +2,23 @@
 
 import { useState } from 'react';
 import SimpleCodeEditor from '@/components/SimpleCodeEditor';
+import EnhancedCodeEditor from '@/components/EnhancedCodeEditor';
 import toast, { Toaster } from 'react-hot-toast';
+
+interface ContextualSuggestion {
+  id: string;
+  type: string;
+  message: string;
+  explanation: string;
+  line: number;
+  column: number;
+  category: string;
+  confidence: number;
+  severity: string;
+  isInline: boolean;
+  actionable: boolean;
+  quickFix: string | null;
+}
 
 interface Suggestion {
   type: 'warning' | 'info' | 'suggestion' | 'success';
@@ -59,6 +75,29 @@ export default function Home() {
   const [expandedSuggestions, setExpandedSuggestions] = useState<Set<string>>(
     new Set()
   );
+  const [contextualSuggestions, setContextualSuggestions] = useState<
+    ContextualSuggestion[]
+  >([]);
+  const [useEnhancedEditor, setUseEnhancedEditor] = useState(true);
+
+  const handleContextualSuggestions = (suggestions: ContextualSuggestion[]) => {
+    setContextualSuggestions(suggestions);
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'error':
+        return 'text-red-600 dark:text-red-400';
+      case 'warning':
+        return 'text-yellow-600 dark:text-yellow-400';
+      case 'info':
+        return 'text-blue-600 dark:text-blue-400';
+      case 'hint':
+        return 'text-green-600 dark:text-green-400';
+      default:
+        return 'text-blue-600 dark:text-blue-400';
+    }
+  };
 
   const analyzeCode = async () => {
     if (!code.trim()) {
@@ -182,7 +221,8 @@ export default function Home() {
               🚀 AI Code Review Tool
             </h1>
             <p className='text-lg text-gray-600 dark:text-gray-300'>
-              Get instant AI-powered code analysis and improvement suggestions
+              Get instant AI-powered code analysis with contextual feedback and
+              real-time suggestions
             </p>
             <div className='mt-4 flex items-center justify-center gap-4'>
               <div className='flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm'>
@@ -192,6 +232,10 @@ export default function Home() {
               <div className='flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm'>
                 <span className='w-2 h-2 bg-green-500 rounded-full'></span>
                 AI-Enhanced Analysis
+              </div>
+              <div className='flex items-center gap-2 px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-sm'>
+                <span className='w-2 h-2 bg-purple-500 rounded-full animate-pulse'></span>
+                Real-time Contextual AI
               </div>
             </div>
           </div>
@@ -203,26 +247,49 @@ export default function Home() {
                 <h2 className='text-xl font-semibold text-gray-800 dark:text-white'>
                   Code Editor
                 </h2>
-                <select
-                  value={language}
-                  onChange={e => setLanguage(e.target.value)}
-                  className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-                >
-                  {LANGUAGES.map(lang => (
-                    <option key={lang.value} value={lang.value}>
-                      {lang.label}
-                    </option>
-                  ))}
-                </select>
+                <div className='flex items-center gap-3'>
+                  <button
+                    onClick={() => setUseEnhancedEditor(!useEnhancedEditor)}
+                    className={`px-3 py-1 text-sm rounded-md border transition-colors ${
+                      useEnhancedEditor
+                        ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300'
+                        : 'bg-gray-100 border-gray-300 text-gray-700 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
+                    }`}
+                  >
+                    {useEnhancedEditor ? '🚀 Real-time AI' : '📝 Basic Editor'}
+                  </button>
+                  <select
+                    value={language}
+                    onChange={e => setLanguage(e.target.value)}
+                    className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  >
+                    {LANGUAGES.map(lang => (
+                      <option key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className='mb-4'>
-                <SimpleCodeEditor
-                  value={code}
-                  onChange={setCode}
-                  language={language}
-                  height='400px'
-                />
+                {useEnhancedEditor ? (
+                  <EnhancedCodeEditor
+                    value={code}
+                    onChange={setCode}
+                    language={language}
+                    height='400px'
+                    enableRealTimeAnalysis={true}
+                    onSuggestionsChange={handleContextualSuggestions}
+                  />
+                ) : (
+                  <SimpleCodeEditor
+                    value={code}
+                    onChange={setCode}
+                    language={language}
+                    height='400px'
+                  />
+                )}
               </div>
 
               <button
@@ -249,6 +316,52 @@ export default function Home() {
 
               {analysis ? (
                 <div className='space-y-6'>
+                  {/* Real-time Contextual Suggestions */}
+                  {useEnhancedEditor && contextualSuggestions.length > 0 && (
+                    <div className='bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800'>
+                      <h3 className='text-lg font-semibold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2'>
+                        <span className='text-2xl'>🚀</span>
+                        Real-time Contextual Suggestions
+                      </h3>
+                      <div className='space-y-2'>
+                        {contextualSuggestions.slice(0, 5).map(suggestion => (
+                          <div
+                            key={suggestion.id}
+                            className='flex items-start gap-3 p-2 bg-white dark:bg-gray-800 rounded border border-blue-100 dark:border-blue-800'
+                          >
+                            <div
+                              className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${getSeverityColor(suggestion.severity)}`}
+                            ></div>
+                            <div className='flex-1'>
+                              <div className='flex items-center gap-2 mb-1'>
+                                <span className='text-sm font-medium text-gray-800 dark:text-white'>
+                                  Line {suggestion.line}:{suggestion.column}
+                                </span>
+                                <span className='px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full'>
+                                  {suggestion.category}
+                                </span>
+                                <span
+                                  className={`px-2 py-1 text-xs rounded-full ${getSeverityColor(suggestion.severity)}`}
+                                >
+                                  {Math.round(suggestion.confidence * 100)}%
+                                </span>
+                              </div>
+                              <div className='text-sm text-gray-600 dark:text-gray-300 mb-1'>
+                                {suggestion.message}
+                              </div>
+                              {suggestion.explanation &&
+                                suggestion.explanation !==
+                                  suggestion.message && (
+                                  <div className='text-xs text-gray-500 dark:text-gray-400'>
+                                    {suggestion.explanation}
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {/* Score */}
                   <div className='text-center'>
                     <div className='text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2'>
@@ -469,7 +582,7 @@ export default function Home() {
             <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center'>
               Features
             </h2>
-            <div className='grid md:grid-cols-3 gap-6'>
+            <div className='grid md:grid-cols-4 gap-6'>
               <div className='text-center'>
                 <div className='text-3xl mb-3'>🔍</div>
                 <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
@@ -477,6 +590,16 @@ export default function Home() {
                 </h3>
                 <p className='text-gray-600 dark:text-gray-300 text-sm'>
                   Get immediate feedback on your code quality and structure
+                </p>
+              </div>
+              <div className='text-center'>
+                <div className='text-3xl mb-3'>🚀</div>
+                <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
+                  Real-time AI Feedback
+                </h3>
+                <p className='text-gray-600 dark:text-gray-300 text-sm'>
+                  Contextual suggestions as you type with inline editor
+                  decorations
                 </p>
               </div>
               <div className='text-center'>

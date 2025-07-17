@@ -21,7 +21,7 @@ describe('AI Code Review Tool', () => {
     render(<Home />);
 
     const description = screen.getByText(
-      'Get instant AI-powered code analysis and improvement suggestions'
+      'Get instant AI-powered code analysis with contextual feedback and real-time suggestions'
     );
     expect(description).toBeInTheDocument();
   });
@@ -32,8 +32,9 @@ describe('AI Code Review Tool', () => {
     const codeEditorHeading = screen.getByText('Code Editor');
     expect(codeEditorHeading).toBeInTheDocument();
 
-    const textarea = screen.getByRole('textbox');
-    expect(textarea).toBeInTheDocument();
+    // Check for enhanced editor toggle
+    const enhancedToggle = screen.getByText('🚀 Real-time AI');
+    expect(enhancedToggle).toBeInTheDocument();
   });
 
   it('renders the analysis results section', () => {
@@ -87,6 +88,10 @@ describe('AI Code Review Tool', () => {
 
   it('updates code when textarea changes', () => {
     render(<Home />);
+
+    // Switch to basic editor to access textarea
+    const basicEditorToggle = screen.getByText('🚀 Real-time AI');
+    fireEvent.click(basicEditorToggle);
 
     const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, { target: { value: 'console.log("test");' } });
