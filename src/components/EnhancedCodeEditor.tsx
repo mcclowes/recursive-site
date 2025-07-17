@@ -26,6 +26,7 @@ interface EnhancedCodeEditorProps {
   height?: string;
   enableRealTimeAnalysis?: boolean;
   onSuggestionsChange?: (suggestions: ContextualSuggestion[]) => void;
+  onSelectionChange?: (selectedText: string) => void;
 }
 
 export default function EnhancedCodeEditor({
@@ -35,6 +36,7 @@ export default function EnhancedCodeEditor({
   height = '400px',
   enableRealTimeAnalysis = true,
   onSuggestionsChange,
+  onSelectionChange,
 }: EnhancedCodeEditorProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<ContextualSuggestion[]>([]);
@@ -193,6 +195,22 @@ export default function EnhancedCodeEditor({
     editorRef.current = editor;
     monacoRef.current = monaco;
     setIsLoading(false);
+
+    // Add selection change listener
+    if (onSelectionChange && typeof editor === 'object' && editor !== null) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const editorInstance = editor as any;
+      editorInstance.onDidChangeCursorSelection?.((event: unknown) => {
+        const model = editorInstance.getModel();
+        if (model && event && typeof event === 'object' && 'selection' in event) {
+          const eventWithSelection = event as { selection: unknown };
+          const selectedText = model.getValueInRange(eventWithSelection.selection);
+          if (selectedText && selectedText.trim().length > 0) {
+            onSelectionChange(selectedText);
+          }
+        }
+      });
+    }
 
     // Initial analysis
     if (value.trim() && enableRealTimeAnalysis) {
