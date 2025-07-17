@@ -10,6 +10,9 @@ interface Suggestion {
   line: number;
   source?: 'AI' | 'rule-based';
   category?: string;
+  explanation?: string;
+  confidence?: number;
+  id?: string;
 }
 
 interface Analysis {
@@ -47,6 +50,9 @@ export default function Home() {
   const [language, setLanguage] = useState('javascript');
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [acceptedSuggestions, setAcceptedSuggestions] = useState<Set<string>>(new Set());
+  const [rejectedSuggestions, setRejectedSuggestions] = useState<Set<string>>(new Set());
+  const [expandedSuggestions, setExpandedSuggestions] = useState<Set<string>>(new Set());
 
   const analyzeCode = async () => {
     if (!code.trim()) {
@@ -79,6 +85,47 @@ export default function Home() {
     }
   };
 
+  const handleSuggestionAction = (suggestionId: string, action: 'accept' | 'reject') => {
+    if (action === 'accept') {
+      setAcceptedSuggestions(prev => new Set([...prev, suggestionId]));
+      setRejectedSuggestions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(suggestionId);
+        return newSet;
+      });
+      toast.success('Suggestion accepted');
+    } else {
+      setRejectedSuggestions(prev => new Set([...prev, suggestionId]));
+      setAcceptedSuggestions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(suggestionId);
+        return newSet;
+      });
+      toast.success('Suggestion rejected');
+    }
+  };
+
+  const toggleSuggestionExpansion = (suggestionId: string) => {
+    setExpandedSuggestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(suggestionId)) {
+        newSet.delete(suggestionId);
+      } else {
+        newSet.add(suggestionId);
+      }
+      return newSet;
+    });
+  };
+
+  const getSuggestionActionColor = (suggestionId: string) => {
+    if (acceptedSuggestions.has(suggestionId)) {
+      return 'border-green-500 bg-green-50 dark:bg-green-900/30';
+    } else if (rejectedSuggestions.has(suggestionId)) {
+      return 'border-red-500 bg-red-50 dark:bg-red-900/30';
+    }
+    return '';
+  };
+
   const getSuggestionIcon = (type: string) => {
     switch (type) {
       case 'warning': return '⚠️';
@@ -97,6 +144,12 @@ export default function Home() {
       case 'success': return 'border-green-400 bg-green-50 dark:bg-green-900/20';
       default: return 'border-gray-400 bg-gray-50 dark:bg-gray-900/20';
     }
+  };
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 0.8) return 'text-green-600 dark:text-green-400';
+    if (confidence >= 0.6) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   return (
@@ -221,29 +274,41 @@ export default function Home() {
                       <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
                         Suggestions ({analysis.suggestions.length})
                       </h3>
-                      {analysis.metrics.aiAnalysisAvailable && (
-                        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                          AI Enhanced
-                        </div>
-                      )}
-                      {analysis.metrics.aiError && (
-                        <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
-                          <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                          AI Unavailable
-                        </div>
-                      )}
+                      <div className="flex items-center gap-4">
+                        {acceptedSuggestions.size > 0 && (
+                          <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                            <span>✓ {acceptedSuggestions.size} accepted</span>
+                          </div>
+                        )}
+                        {rejectedSuggestions.size > 0 && (
+                          <div className="flex items-center gap-1 text-sm text-red-600 dark:text-red-400">
+                            <span>✗ {rejectedSuggestions.size} rejected</span>
+                          </div>
+                        )}
+                        {analysis.metrics.aiAnalysisAvailable && (
+                          <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            AI Enhanced
+                          </div>
+                        )}
+                        {analysis.metrics.aiError && (
+                          <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                            AI Unavailable
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
                       {analysis.suggestions.map((suggestion, index) => (
                         <div
-                          key={index}
-                          className={`p-3 rounded-lg border-l-4 ${getSuggestionColor(suggestion.type)}`}
+                          key={suggestion.id || index}
+                          className={`p-4 rounded-lg border-l-4 transition-all duration-200 ${getSuggestionColor(suggestion.type)} ${getSuggestionActionColor(suggestion.id || '')}`}
                         >
-                          <div className="flex items-start gap-2">
-                            <span className="text-lg">{getSuggestionIcon(suggestion.type)}</span>
+                          <div className="flex items-start gap-3">
+                            <span className="text-lg flex-shrink-0">{getSuggestionIcon(suggestion.type)}</span>
                             <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="flex items-center gap-2 mb-2">
                                 <div className="text-sm font-medium text-gray-800 dark:text-white">
                                   Line {suggestion.line}
                                 </div>
@@ -257,10 +322,57 @@ export default function Home() {
                                     {suggestion.category}
                                   </span>
                                 )}
+                                {suggestion.confidence && (
+                                  <span className={`px-2 py-1 text-xs rounded-full ${getConfidenceColor(suggestion.confidence)}`}>
+                                    {Math.round(suggestion.confidence * 100)}%
+                                  </span>
+                                )}
                               </div>
-                              <div className="text-sm text-gray-600 dark:text-gray-300">
+                              <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 {suggestion.message}
                               </div>
+                              
+                              {suggestion.explanation && suggestion.explanation !== suggestion.message && (
+                                <div className="mb-3">
+                                  <button
+                                    onClick={() => toggleSuggestionExpansion(suggestion.id || '')}
+                                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                  >
+                                    {expandedSuggestions.has(suggestion.id || '') ? '▼' : '▶'} 
+                                    {expandedSuggestions.has(suggestion.id || '') ? 'Hide' : 'Show'} explanation
+                                  </button>
+                                  {expandedSuggestions.has(suggestion.id || '') && (
+                                    <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300">
+                                      {suggestion.explanation}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {suggestion.source === 'AI' && suggestion.id && (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleSuggestionAction(suggestion.id!, 'accept')}
+                                    className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                                      acceptedSuggestions.has(suggestion.id)
+                                        ? 'bg-green-100 border-green-500 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                        : 'border-gray-300 text-gray-600 hover:bg-green-50 hover:border-green-300 dark:border-gray-600 dark:text-gray-400'
+                                    }`}
+                                  >
+                                    ✓ Accept
+                                  </button>
+                                  <button
+                                    onClick={() => handleSuggestionAction(suggestion.id!, 'reject')}
+                                    className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                                      rejectedSuggestions.has(suggestion.id)
+                                        ? 'bg-red-100 border-red-500 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                        : 'border-gray-300 text-gray-600 hover:bg-red-50 hover:border-red-300 dark:border-gray-600 dark:text-gray-400'
+                                    }`}
+                                  >
+                                    ✗ Reject
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
