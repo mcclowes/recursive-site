@@ -160,9 +160,9 @@ describe('AmbientSounds', () => {
   it('handles audio context creation gracefully', () => {
     // Test that component doesn't crash when AudioContext is not available
     const originalAudioContext = window.AudioContext;
-    // @ts-ignore
+    // @ts-expect-error Testing missing AudioContext
     delete window.AudioContext;
-    // @ts-ignore
+    // @ts-expect-error Testing missing webkitAudioContext  
     delete window.webkitAudioContext;
     
     render(<AmbientSounds {...defaultProps} />);

@@ -74,7 +74,8 @@ export default function AmbientSounds({
     } else if (!isEnabled && isPlaying) {
       stopAmbientSound();
     }
-  }, [isEnabled]); // Removing other dependencies to avoid infinite loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEnabled]); // Only depend on isEnabled to avoid infinite loops
 
   const createWebAudioSynth = (type: SoundType): AudioContext => {
     const ctx = new (window.AudioContext || window.webkitAudioContext || AudioContext)();
