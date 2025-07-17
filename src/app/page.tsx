@@ -31,6 +31,21 @@ interface Suggestion {
   id?: string;
 }
 
+interface PerformanceOptimization {
+  id: string;
+  type: string;
+  message: string;
+  explanation: string;
+  line: number;
+  category: string;
+  confidence: number;
+  severity: string;
+  impactLevel: string;
+  optimizationType: string;
+  codeExample: string | null;
+  estimatedImprovement: string | null;
+}
+
 interface Analysis {
   score: number;
   suggestions: Suggestion[];
@@ -79,6 +94,10 @@ export default function Home() {
     ContextualSuggestion[]
   >([]);
   const [useEnhancedEditor, setUseEnhancedEditor] = useState(false); // Default to false for testing compatibility
+  const [performanceSuggestions, setPerformanceSuggestions] = useState<
+    PerformanceOptimization[]
+  >([]);
+  const [isOptimizingPerformance, setIsOptimizingPerformance] = useState(false);
 
   const handleContextualSuggestions = (suggestions: ContextualSuggestion[]) => {
     setContextualSuggestions(suggestions);
@@ -96,6 +115,37 @@ export default function Home() {
         return 'text-green-600 dark:text-green-400';
       default:
         return 'text-blue-600 dark:text-blue-400';
+    }
+  };
+
+  const optimizePerformance = async () => {
+    if (!code.trim()) {
+      toast.error('Please enter some code to optimize');
+      return;
+    }
+
+    setIsOptimizingPerformance(true);
+    try {
+      const response = await fetch('/api/analyze/performance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code, language }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get performance suggestions');
+      }
+
+      const data = await response.json();
+      setPerformanceSuggestions(data.suggestions);
+      toast.success('Performance optimization suggestions generated!');
+    } catch (error) {
+      toast.error('Failed to get performance suggestions');
+      console.error('Error:', error);
+    } finally {
+      setIsOptimizingPerformance(false);
     }
   };
 
@@ -210,6 +260,38 @@ export default function Home() {
     return 'text-red-600 dark:text-red-400';
   };
 
+  const getImpactColor = (impactLevel: string) => {
+    switch (impactLevel) {
+      case 'high':
+        return 'text-red-600 dark:text-red-400';
+      case 'medium':
+        return 'text-yellow-600 dark:text-yellow-400';
+      case 'low':
+        return 'text-green-600 dark:text-green-400';
+      default:
+        return 'text-blue-600 dark:text-blue-400';
+    }
+  };
+
+  const getOptimizationTypeIcon = (type: string) => {
+    switch (type) {
+      case 'algorithmic':
+        return '⚡';
+      case 'memory':
+        return '🧠';
+      case 'caching':
+        return '💾';
+      case 'async':
+        return '🔄';
+      case 'data-structure':
+        return '📊';
+      case 'language-specific':
+        return '🔧';
+      default:
+        return '🚀';
+    }
+  };
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800'>
       <Toaster position='top-right' />
@@ -295,7 +377,7 @@ export default function Home() {
               <button
                 onClick={analyzeCode}
                 disabled={isAnalyzing}
-                className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2'
+                className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 mb-3'
               >
                 {isAnalyzing ? (
                   <>
@@ -304,6 +386,21 @@ export default function Home() {
                   </>
                 ) : (
                   <>🔍 Analyze Code</>
+                )}
+              </button>
+
+              <button
+                onClick={optimizePerformance}
+                disabled={isOptimizingPerformance}
+                className='w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2'
+              >
+                {isOptimizingPerformance ? (
+                  <>
+                    <div className='animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent'></div>
+                    Optimizing...
+                  </>
+                ) : (
+                  <>🚀 Optimize Performance</>
                 )}
               </button>
             </div>
@@ -362,6 +459,75 @@ export default function Home() {
                       </div>
                     </div>
                   )}
+                  
+                  {/* Performance Optimization Suggestions */}
+                  {performanceSuggestions.length > 0 && (
+                    <div className='bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800'>
+                      <h3 className='text-lg font-semibold text-green-800 dark:text-green-200 mb-3 flex items-center gap-2'>
+                        <span className='text-2xl'>🚀</span>
+                        Performance Optimization Suggestions
+                      </h3>
+                      <div className='space-y-3'>
+                        {performanceSuggestions.map(suggestion => (
+                          <div
+                            key={suggestion.id}
+                            className='bg-white dark:bg-gray-800 p-4 rounded-lg border border-green-100 dark:border-green-800'
+                          >
+                            <div className='flex items-start gap-3'>
+                              <span className='text-lg flex-shrink-0 mt-1'>
+                                {getOptimizationTypeIcon(suggestion.optimizationType)}
+                              </span>
+                              <div className='flex-1'>
+                                <div className='flex items-center gap-2 mb-2'>
+                                  <span className='text-sm font-medium text-gray-800 dark:text-white'>
+                                    Line {suggestion.line}
+                                  </span>
+                                  <span className='px-2 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full'>
+                                    {suggestion.optimizationType}
+                                  </span>
+                                  <span className={`px-2 py-1 text-xs rounded-full ${getImpactColor(suggestion.impactLevel)}`}>
+                                    {suggestion.impactLevel} impact
+                                  </span>
+                                  <span className={`px-2 py-1 text-xs rounded-full ${getConfidenceColor(suggestion.confidence)}`}>
+                                    {Math.round(suggestion.confidence * 100)}%
+                                  </span>
+                                </div>
+                                <div className='text-sm text-gray-800 dark:text-white font-medium mb-1'>
+                                  {suggestion.message}
+                                </div>
+                                <div className='text-sm text-gray-600 dark:text-gray-300 mb-2'>
+                                  {suggestion.explanation}
+                                </div>
+                                {suggestion.estimatedImprovement && (
+                                  <div className='text-xs text-green-600 dark:text-green-400 mb-2 flex items-center gap-1'>
+                                    <span>📈</span>
+                                    <strong>Expected improvement:</strong> {suggestion.estimatedImprovement}
+                                  </div>
+                                )}
+                                {suggestion.codeExample && (
+                                  <div className='mt-2'>
+                                    <button
+                                      onClick={() => toggleSuggestionExpansion(suggestion.id)}
+                                      className='text-xs text-green-600 dark:text-green-400 hover:underline flex items-center gap-1'
+                                    >
+                                      {expandedSuggestions.has(suggestion.id) ? '▼' : '▶'}
+                                      {expandedSuggestions.has(suggestion.id) ? 'Hide' : 'Show'} optimized code
+                                    </button>
+                                    {expandedSuggestions.has(suggestion.id) && (
+                                      <div className='mt-2 p-3 bg-gray-900 dark:bg-gray-700 rounded text-sm text-green-400 font-mono overflow-x-auto'>
+                                        <pre>{suggestion.codeExample}</pre>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Score */}
                   <div className='text-center'>
                     <div className='text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2'>
@@ -582,7 +748,7 @@ export default function Home() {
             <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center'>
               Features
             </h2>
-            <div className='grid md:grid-cols-4 gap-6'>
+            <div className='grid md:grid-cols-5 gap-6'>
               <div className='text-center'>
                 <div className='text-3xl mb-3'>🔍</div>
                 <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
@@ -594,6 +760,15 @@ export default function Home() {
               </div>
               <div className='text-center'>
                 <div className='text-3xl mb-3'>🚀</div>
+                <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
+                  Performance Optimization
+                </h3>
+                <p className='text-gray-600 dark:text-gray-300 text-sm'>
+                  Get AI-powered performance optimization suggestions with code examples
+                </p>
+              </div>
+              <div className='text-center'>
+                <div className='text-3xl mb-3'>🔄</div>
                 <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
                   Real-time AI Feedback
                 </h3>
