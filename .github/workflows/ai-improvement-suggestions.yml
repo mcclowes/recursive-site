@@ -19,22 +19,22 @@ jobs:
     runs-on: ubuntu-latest
     # Only run on schedule, manual trigger, or when a PR is merged
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetch all history for better analysis
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
+
       - name: Install dependencies
         run: |
           npm install axios
-      
+
       - name: Generate AI-powered feature suggestions
         id: generate-suggestions
         env:
@@ -42,14 +42,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node .github/scripts/generate-suggestions.js
-      
+
       - name: Create advanced feature suggestion issue
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            
+
             try {
               // Check if we should skip issue creation due to duplicates
               const skipFile = '.github/skip-issue-creation.txt';
@@ -120,4 +120,4 @@ jobs:
               }
             } catch (error) {
               console.error('Error creating issue:', error);
-            } 
+            }

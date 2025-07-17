@@ -5,19 +5,25 @@
 The following settings should be configured in the GitHub repository settings:
 
 ### Repository Description
+
 Add this description to the repository:
+
 ```
 An AI-powered Next.js web application that continuously improves itself using automated GitHub Actions and OpenAI GPT-4.
 ```
 
 ### Primary Language
+
 Set the primary language to:
+
 ```
 TypeScript
 ```
 
 ### Topics (optional)
+
 Consider adding these topics to help with discoverability:
+
 - `nextjs`
 - `typescript`
 - `ai`

@@ -9,7 +9,10 @@ interface CodeContext {
   codeStructure: string;
 }
 
-export function extractCodeContext(code: string, language: string): CodeContext {
+export function extractCodeContext(
+  code: string,
+  language: string
+): CodeContext {
   const lines = code.split('\n');
   const context: CodeContext = {
     functions: [],
@@ -19,7 +22,7 @@ export function extractCodeContext(code: string, language: string): CodeContext 
     complexity: 0,
     patterns: [],
     language,
-    codeStructure: ''
+    codeStructure: '',
   };
 
   if (language === 'javascript' || language === 'typescript') {
@@ -33,11 +36,16 @@ export function extractCodeContext(code: string, language: string): CodeContext 
   return context;
 }
 
-function extractJavaScriptContext(code: string, lines: string[], context: CodeContext): CodeContext {
+function extractJavaScriptContext(
+  code: string,
+  lines: string[],
+  context: CodeContext
+): CodeContext {
   // Extract imports
   const importRegex = /import\s+.*?\s+from\s+['"](.+?)['"]/g;
-  const requireRegex = /(?:const|let|var)\s+.*?\s*=\s*require\(['"](.+?)['"]\)/g;
-  
+  const requireRegex =
+    /(?:const|let|var)\s+.*?\s*=\s*require\(['"](.+?)['"]\)/g;
+
   let match;
   while ((match = importRegex.exec(code)) !== null) {
     context.imports.push(match[1]);
@@ -47,10 +55,14 @@ function extractJavaScriptContext(code: string, lines: string[], context: CodeCo
   }
 
   // Extract function definitions (including methods in classes)
-  const functionRegex = /(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?(?:\(.*?\)|.*?)\s*=>|async\s+function\s+(\w+)|(\w+)\s*\(.*?\)\s*{)/g;
+  const functionRegex =
+    /(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?(?:\(.*?\)|.*?)\s*=>|async\s+function\s+(\w+)|(\w+)\s*\(.*?\)\s*{)/g;
   while ((match = functionRegex.exec(code)) !== null) {
     const funcName = match[1] || match[2] || match[3] || match[4];
-    if (funcName && !['if', 'for', 'while', 'switch', 'catch', 'try'].includes(funcName)) {
+    if (
+      funcName &&
+      !['if', 'for', 'while', 'switch', 'catch', 'try'].includes(funcName)
+    ) {
       context.functions.push(funcName);
     }
   }
@@ -79,9 +91,14 @@ function extractJavaScriptContext(code: string, lines: string[], context: CodeCo
   return context;
 }
 
-function extractPythonContext(code: string, lines: string[], context: CodeContext): CodeContext {
+function extractPythonContext(
+  code: string,
+  lines: string[],
+  context: CodeContext
+): CodeContext {
   // Extract imports
-  const importRegex = /(?:from\s+(\w+(?:\.\w+)*)\s+import|import\s+(\w+(?:\.\w+)*))/g;
+  const importRegex =
+    /(?:from\s+(\w+(?:\.\w+)*)\s+import|import\s+(\w+(?:\.\w+)*))/g;
   let match;
   while ((match = importRegex.exec(code)) !== null) {
     context.imports.push(match[1] || match[2]);
@@ -112,7 +129,11 @@ function extractPythonContext(code: string, lines: string[], context: CodeContex
   return context;
 }
 
-function extractJavaContext(code: string, lines: string[], context: CodeContext): CodeContext {
+function extractJavaContext(
+  code: string,
+  lines: string[],
+  context: CodeContext
+): CodeContext {
   // Extract imports
   const importRegex = /import\s+(?:static\s+)?([a-zA-Z0-9_.]+(?:\.\*)?)/g;
   let match;
@@ -121,7 +142,8 @@ function extractJavaContext(code: string, lines: string[], context: CodeContext)
   }
 
   // Extract method definitions
-  const methodRegex = /(?:public|private|protected|static|\s)+[\w<>\[\]]+\s+(\w+)\s*\(/g;
+  const methodRegex =
+    /(?:public|private|protected|static|\s)+[\w<>\[\]]+\s+(\w+)\s*\(/g;
   while ((match = methodRegex.exec(code)) !== null) {
     context.functions.push(match[1]);
   }
@@ -133,7 +155,8 @@ function extractJavaContext(code: string, lines: string[], context: CodeContext)
   }
 
   // Extract variable declarations
-  const variableRegex = /(?:private|public|protected|static|\s)+[\w<>\[\]]+\s+(\w+)\s*[=;]/g;
+  const variableRegex =
+    /(?:private|public|protected|static|\s)+[\w<>\[\]]+\s+(\w+)\s*[=;]/g;
   while ((match = variableRegex.exec(code)) !== null) {
     context.variables.push(match[1]);
   }
@@ -240,9 +263,18 @@ function detectJavaPatterns(code: string): string[] {
 
 function calculateComplexity(code: string): number {
   const complexityKeywords = [
-    'if', 'else', 'for', 'while', 'switch', 'case', 'catch', 'try', 'except', 'elif'
+    'if',
+    'else',
+    'for',
+    'while',
+    'switch',
+    'case',
+    'catch',
+    'try',
+    'except',
+    'elif',
   ];
-  
+
   let complexity = 1;
   complexityKeywords.forEach(keyword => {
     const regex = new RegExp(`\\b${keyword}\\b`, 'g');
@@ -251,25 +283,31 @@ function calculateComplexity(code: string): number {
       complexity += matches.length;
     }
   });
-  
+
   return complexity;
 }
 
 function generateStructureSummary(context: CodeContext): string {
   const summary = [];
-  
+
   if (context.functions.length > 0) {
-    summary.push(`${context.functions.length} function(s): ${context.functions.slice(0, 3).join(', ')}${context.functions.length > 3 ? '...' : ''}`);
+    summary.push(
+      `${context.functions.length} function(s): ${context.functions.slice(0, 3).join(', ')}${context.functions.length > 3 ? '...' : ''}`
+    );
   }
   if (context.classes.length > 0) {
-    summary.push(`${context.classes.length} class(es): ${context.classes.slice(0, 3).join(', ')}${context.classes.length > 3 ? '...' : ''}`);
+    summary.push(
+      `${context.classes.length} class(es): ${context.classes.slice(0, 3).join(', ')}${context.classes.length > 3 ? '...' : ''}`
+    );
   }
   if (context.imports.length > 0) {
-    summary.push(`${context.imports.length} import(s): ${context.imports.slice(0, 3).join(', ')}${context.imports.length > 3 ? '...' : ''}`);
+    summary.push(
+      `${context.imports.length} import(s): ${context.imports.slice(0, 3).join(', ')}${context.imports.length > 3 ? '...' : ''}`
+    );
   }
   if (context.patterns.length > 0) {
     summary.push(`Patterns: ${context.patterns.join(', ')}`);
   }
-  
+
   return summary.join('; ');
 }

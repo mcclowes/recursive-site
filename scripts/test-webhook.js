@@ -16,13 +16,13 @@ const testWebhook = async () => {
       target: 'production',
       error: {
         code: 'BUILD_ERROR',
-        message: 'Build failed due to TypeScript errors'
-      }
+        message: 'Build failed due to TypeScript errors',
+      },
     },
     project: {
       id: 'test-project-id',
-      name: 'recursive-site'
-    }
+      name: 'recursive-site',
+    },
   };
 
   console.log('Testing Vercel webhook endpoint...');
@@ -34,7 +34,7 @@ const testWebhook = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(testPayload)
+      body: JSON.stringify(testPayload),
     });
 
     const data = await response.json();

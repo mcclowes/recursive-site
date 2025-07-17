@@ -20,12 +20,15 @@ function estimateTokens(text) {
 // Function to get repository information
 async function getRepositoryInfo() {
   try {
-    const response = await axios.get('https://api.github.com/repos/mcclowes/recursive-site', {
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json'
+    const response = await axios.get(
+      'https://api.github.com/repos/mcclowes/recursive-site',
+      {
+        headers: {
+          Authorization: `token ${GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
       }
-    });
+    );
     return response.data;
   } catch (error) {
     console.error('Error fetching repository info:', error.message);
@@ -41,30 +44,30 @@ function analyzeRepositoryStructure() {
     fileTypes: {},
     totalFiles: 0,
     totalDirectories: 0,
-    topLevelItems: []
+    topLevelItems: [],
   };
 
   function scanDirectory(dirPath, relativePath = '', depth = 0) {
     try {
       const items = fs.readdirSync(dirPath);
-      
+
       // Limit depth to avoid scanning too deep
       if (depth > 3) return;
-      
+
       // Limit items per directory to avoid overwhelming context
       const maxItemsPerDir = depth === 0 ? 50 : 20;
       const limitedItems = items.slice(0, maxItemsPerDir);
-      
+
       for (const item of limitedItems) {
         const fullPath = path.join(dirPath, item);
         const relativeItemPath = path.join(relativePath, item);
-        
+
         if (item.startsWith('.') && item !== '.git') {
           continue; // Skip hidden files except .git
         }
-        
+
         const stats = fs.statSync(fullPath);
-        
+
         if (stats.isDirectory()) {
           if (depth === 0) {
             analysis.topLevelItems.push(relativeItemPath);
@@ -75,7 +78,7 @@ function analyzeRepositoryStructure() {
         } else {
           analysis.files.push(relativeItemPath);
           analysis.totalFiles++;
-          
+
           const ext = path.extname(item).toLowerCase();
           analysis.fileTypes[ext] = (analysis.fileTypes[ext] || 0) + 1;
         }
@@ -101,13 +104,16 @@ function analyzeProjectFeatures() {
     deployment: false,
     authentication: false,
     collaboration: false,
-    analytics: false
+    analytics: false,
   };
 
   try {
     // Check for code editor
     const pageContent = fs.readFileSync('src/app/page.tsx', 'utf8');
-    if (pageContent.includes('SimpleCodeEditor') || pageContent.includes('monaco')) {
+    if (
+      pageContent.includes('SimpleCodeEditor') ||
+      pageContent.includes('monaco')
+    ) {
       features.codeEditor = true;
     }
 
@@ -117,7 +123,11 @@ function analyzeProjectFeatures() {
     }
 
     // Check for multi-language support
-    if (pageContent.includes('javascript') && pageContent.includes('python') && pageContent.includes('typescript')) {
+    if (
+      pageContent.includes('javascript') &&
+      pageContent.includes('python') &&
+      pageContent.includes('typescript')
+    ) {
       features.multiLanguage = true;
     }
 
@@ -127,8 +137,15 @@ function analyzeProjectFeatures() {
     }
 
     // Check for AI integration
-    const analyzeContent = fs.readFileSync('src/app/api/analyze/route.ts', 'utf8');
-    if (analyzeContent.includes('openai') || analyzeContent.includes('claude') || analyzeContent.includes('gemini')) {
+    const analyzeContent = fs.readFileSync(
+      'src/app/api/analyze/route.ts',
+      'utf8'
+    );
+    if (
+      analyzeContent.includes('openai') ||
+      analyzeContent.includes('claude') ||
+      analyzeContent.includes('gemini')
+    ) {
       features.aiIntegration = true;
     }
 
@@ -138,10 +155,13 @@ function analyzeProjectFeatures() {
     }
 
     // Check for deployment config
-    if (fs.existsSync('vercel.json') || fs.existsSync('netlify.toml') || fs.existsSync('Dockerfile')) {
+    if (
+      fs.existsSync('vercel.json') ||
+      fs.existsSync('netlify.toml') ||
+      fs.existsSync('Dockerfile')
+    ) {
       features.deployment = true;
     }
-
   } catch (error) {
     console.error('Error analyzing project features:', error.message);
   }
@@ -152,12 +172,14 @@ function analyzeProjectFeatures() {
 // Function to get project roadmap insights
 function getProjectRoadmap() {
   const roadmap = [];
-  
+
   try {
     const readmeContent = fs.readFileSync('README.md', 'utf8');
-    
+
     // Extract "What's Next" section
-    const whatsNextMatch = readmeContent.match(/## 📈 What's Next\?(.*?)(?=##|$)/s);
+    const whatsNextMatch = readmeContent.match(
+      /## 📈 What's Next\?(.*?)(?=##|$)/s
+    );
     if (whatsNextMatch) {
       const whatsNext = whatsNextMatch[1];
       const items = whatsNext.match(/- ([^\n]+)/g);
@@ -165,27 +187,28 @@ function getProjectRoadmap() {
         roadmap.push(...items.map(item => item.replace(/^- /, '')));
       }
     }
-    
+
     // Extract TODO comments from code
     const todoPattern = /\/\/\s*TODO:?\s*([^\n]+)/gi;
     const files = ['src/app/page.tsx', 'src/app/api/analyze/route.ts'];
-    
+
     files.forEach(file => {
       try {
         const content = fs.readFileSync(file, 'utf8');
         const todos = content.match(todoPattern);
         if (todos) {
-          roadmap.push(...todos.map(todo => todo.replace(/\/\/\s*TODO:?\s*/, '')));
+          roadmap.push(
+            ...todos.map(todo => todo.replace(/\/\/\s*TODO:?\s*/, ''))
+          );
         }
       } catch (e) {
         // File might not exist
       }
     });
-    
   } catch (error) {
     console.error('Error getting project roadmap:', error.message);
   }
-  
+
   return roadmap;
 }
 
@@ -210,33 +233,37 @@ function readImportantFiles() {
     'src/app/page.tsx',
     'src/app/api/analyze/route.ts',
     'next.config.ts',
-    'tailwind.config.ts'
+    'tailwind.config.ts',
   ];
 
   const fileContents = {};
   let totalTokens = 0;
-  
+
   for (const file of importantFiles) {
     try {
       if (fs.existsSync(file)) {
         let content = fs.readFileSync(file, 'utf8');
-        
+
         // Limit file content to reduce tokens, but keep more for key files
         let maxCharsPerFile = 500;
         if (file === 'README.md') maxCharsPerFile = 1000;
         if (file === 'package.json') maxCharsPerFile = 800;
-        if (file.endsWith('.tsx') || file.endsWith('.ts')) maxCharsPerFile = 1200;
-        
+        if (file.endsWith('.tsx') || file.endsWith('.ts'))
+          maxCharsPerFile = 1200;
+
         if (content.length > maxCharsPerFile) {
           content = content.substring(0, maxCharsPerFile) + '...';
         }
-        
+
         const fileTokens = estimateTokens(content);
-        if (totalTokens + fileTokens > MAX_TOKENS * 0.4) { // Use 40% of tokens for file contents
-          console.log(`⚠️ Stopping file reading to stay within token limits (${totalTokens} tokens used)`);
+        if (totalTokens + fileTokens > MAX_TOKENS * 0.4) {
+          // Use 40% of tokens for file contents
+          console.log(
+            `⚠️ Stopping file reading to stay within token limits (${totalTokens} tokens used)`
+          );
           break;
         }
-        
+
         fileContents[file] = content;
         totalTokens += fileTokens;
       }
@@ -244,7 +271,7 @@ function readImportantFiles() {
       console.error(`Error reading ${file}:`, error.message);
     }
   }
-  
+
   return fileContents;
 }
 
@@ -252,22 +279,25 @@ function readImportantFiles() {
 async function checkForExistingIssues(suggestions) {
   try {
     // Get recent issues with ai-suggestion label
-    const response = await axios.get('https://api.github.com/repos/mcclowes/recursive-site/issues', {
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      params: {
-        state: 'open',
-        labels: 'ai-suggestion',
-        per_page: 10,
-        sort: 'created',
-        direction: 'desc'
+    const response = await axios.get(
+      'https://api.github.com/repos/mcclowes/recursive-site/issues',
+      {
+        headers: {
+          Authorization: `token ${GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+        params: {
+          state: 'open',
+          labels: 'ai-suggestion',
+          per_page: 10,
+          sort: 'created',
+          direction: 'desc',
+        },
       }
-    });
+    );
 
     const recentIssues = response.data;
-    
+
     if (recentIssues.length === 0) {
       console.log('No existing AI suggestion issues found');
       return false;
@@ -275,30 +305,34 @@ async function checkForExistingIssues(suggestions) {
 
     // Extract key topics from current suggestions
     const currentTopics = extractTopics(suggestions);
-    
+
     // Check each recent issue for similarity
     for (const issue of recentIssues) {
       const issueTopics = extractTopics(issue.body);
       const similarity = calculateSimilarity(currentTopics, issueTopics);
-      
+
       // Calculate time factor - more recent issues get higher weight
       const issueDate = new Date(issue.created_at);
       const now = new Date();
       const daysSinceCreation = (now - issueDate) / (1000 * 60 * 60 * 24);
-      
+
       // Adjust similarity based on recency (issues older than 7 days get lower weight)
-      const timeFactor = Math.max(0.5, 1 - (daysSinceCreation / 7));
+      const timeFactor = Math.max(0.5, 1 - daysSinceCreation / 7);
       const adjustedSimilarity = similarity * timeFactor;
-      
-      console.log(`Checking similarity with issue #${issue.number}: ${similarity.toFixed(2)} (adjusted: ${adjustedSimilarity.toFixed(2)}, days old: ${daysSinceCreation.toFixed(1)})`);
-      
+
+      console.log(
+        `Checking similarity with issue #${issue.number}: ${similarity.toFixed(2)} (adjusted: ${adjustedSimilarity.toFixed(2)}, days old: ${daysSinceCreation.toFixed(1)})`
+      );
+
       // If adjusted similarity is above threshold, consider it a duplicate
       if (adjustedSimilarity > 0.6) {
-        console.log(`⚠️ Similar issue found: #${issue.number} (adjusted similarity: ${adjustedSimilarity.toFixed(2)})`);
+        console.log(
+          `⚠️ Similar issue found: #${issue.number} (adjusted similarity: ${adjustedSimilarity.toFixed(2)})`
+        );
         return true;
       }
     }
-    
+
     console.log('✅ No similar issues found');
     return false;
   } catch (error) {
@@ -311,32 +345,77 @@ async function checkForExistingIssues(suggestions) {
 // Function to extract key topics from text
 function extractTopics(text) {
   const topics = new Set();
-  
+
   // Extract AI and feature-specific keywords
   const keywords = [
-    'ai integration', 'openai', 'claude', 'gemini', 'machine learning', 'neural network',
-    'real-time analysis', 'code review', 'static analysis', 'security scanning',
-    'collaboration', 'team features', 'workflow integration', 'api integration',
-    'performance optimization', 'scalability', 'monitoring', 'analytics',
-    'authentication', 'authorization', 'deployment', 'ci/cd', 'testing',
-    'documentation', 'typescript', 'next.js', 'react', 'tailwind',
-    'monaco editor', 'code editor', 'syntax highlighting', 'autocomplete',
-    'linting', 'formatting', 'refactoring', 'code quality', 'metrics',
-    'github integration', 'version control', 'pull requests', 'code diff',
-    'plugin system', 'extensibility', 'customization', 'themes',
-    'mobile support', 'responsive design', 'accessibility', 'offline mode',
-    'websockets', 'real-time updates', 'notifications', 'alerts',
-    'dashboard', 'reporting', 'insights', 'visualizations', 'charts'
+    'ai integration',
+    'openai',
+    'claude',
+    'gemini',
+    'machine learning',
+    'neural network',
+    'real-time analysis',
+    'code review',
+    'static analysis',
+    'security scanning',
+    'collaboration',
+    'team features',
+    'workflow integration',
+    'api integration',
+    'performance optimization',
+    'scalability',
+    'monitoring',
+    'analytics',
+    'authentication',
+    'authorization',
+    'deployment',
+    'ci/cd',
+    'testing',
+    'documentation',
+    'typescript',
+    'next.js',
+    'react',
+    'tailwind',
+    'monaco editor',
+    'code editor',
+    'syntax highlighting',
+    'autocomplete',
+    'linting',
+    'formatting',
+    'refactoring',
+    'code quality',
+    'metrics',
+    'github integration',
+    'version control',
+    'pull requests',
+    'code diff',
+    'plugin system',
+    'extensibility',
+    'customization',
+    'themes',
+    'mobile support',
+    'responsive design',
+    'accessibility',
+    'offline mode',
+    'websockets',
+    'real-time updates',
+    'notifications',
+    'alerts',
+    'dashboard',
+    'reporting',
+    'insights',
+    'visualizations',
+    'charts',
   ];
-  
+
   const lowerText = text.toLowerCase();
-  
+
   for (const keyword of keywords) {
     if (lowerText.includes(keyword)) {
       topics.add(keyword);
     }
   }
-  
+
   // Extract feature names from markdown headers
   const featureHeaders = text.match(/##\s+🎯\s+([^\n]+)/g);
   if (featureHeaders) {
@@ -345,27 +424,31 @@ function extractTopics(text) {
       topics.add(cleanHeader);
     });
   }
-  
+
   // Extract technical terms from code blocks
   const codeBlocks = text.match(/```[\s\S]*?```/g);
   if (codeBlocks) {
     codeBlocks.forEach(block => {
-      const techTerms = block.match(/\b(async|await|fetch|api|openai|claude|websocket|mongodb|redis|jwt|oauth|docker|kubernetes|terraform|aws|azure|gcp)\b/gi);
+      const techTerms = block.match(
+        /\b(async|await|fetch|api|openai|claude|websocket|mongodb|redis|jwt|oauth|docker|kubernetes|terraform|aws|azure|gcp)\b/gi
+      );
       if (techTerms) {
         techTerms.forEach(term => topics.add(term.toLowerCase()));
       }
     });
   }
-  
+
   // Extract impact and priority indicators
   const impactPriority = text.match(/\*\*(Impact|Priority):\*\*\s*([^\n]+)/g);
   if (impactPriority) {
     impactPriority.forEach(item => {
-      const cleanItem = item.replace(/\*\*(Impact|Priority):\*\*\s*/, '').toLowerCase();
+      const cleanItem = item
+        .replace(/\*\*(Impact|Priority):\*\*\s*/, '')
+        .toLowerCase();
       topics.add(cleanItem.substring(0, 30));
     });
   }
-  
+
   return Array.from(topics);
 }
 
@@ -374,13 +457,13 @@ function calculateSimilarity(topics1, topics2) {
   if (topics1.length === 0 || topics2.length === 0) {
     return 0;
   }
-  
+
   const set1 = new Set(topics1);
   const set2 = new Set(topics2);
-  
+
   const intersection = new Set([...set1].filter(x => set2.has(x)));
   const union = new Set([...set1, ...set2]);
-  
+
   return intersection.size / union.size;
 }
 
@@ -402,7 +485,7 @@ This is an AI Code Review Tool that provides instant code analysis, quality scor
 - Total files: ${analysis.totalFiles}
 - Total directories: ${analysis.totalDirectories}
 - Main technologies: ${Object.entries(analysis.fileTypes)
-    .sort(([,a], [,b]) => b - a)
+    .sort(([, a], [, b]) => b - a)
     .slice(0, 8)
     .map(([ext, count]) => `${ext}:${count}`)
     .join(', ')}
@@ -410,22 +493,28 @@ This is an AI Code Review Tool that provides instant code analysis, quality scor
 
 **CURRENT FEATURES DETECTED:**
 ${Object.entries(analysis.currentFeatures)
-  .map(([feature, enabled]) => `- ${feature}: ${enabled ? '✅ Implemented' : '❌ Not implemented'}`)
+  .map(
+    ([feature, enabled]) =>
+      `- ${feature}: ${enabled ? '✅ Implemented' : '❌ Not implemented'}`
+  )
   .join('\n')}
 
 **EXISTING ROADMAP ITEMS:**
 ${analysis.roadmap.length > 0 ? analysis.roadmap.map(item => `- ${item}`).join('\n') : '- No explicit roadmap items found'}
 
 **CURRENT TECH STACK (from analysis):**
-${Object.entries(fileContents).map(([file, content]) => {
-  if (file === 'package.json') {
-    return `- Frontend: Next.js, React, TypeScript, TailwindCSS, Monaco Editor`;
-  }
-  if (file === 'README.md') {
-    return `- Core Features: Multi-language support, real-time analysis, quality scoring, improvement suggestions`;
-  }
-  return '';
-}).filter(Boolean).join('\n')}
+${Object.entries(fileContents)
+  .map(([file, content]) => {
+    if (file === 'package.json') {
+      return `- Frontend: Next.js, React, TypeScript, TailwindCSS, Monaco Editor`;
+    }
+    if (file === 'README.md') {
+      return `- Core Features: Multi-language support, real-time analysis, quality scoring, improvement suggestions`;
+    }
+    return '';
+  })
+  .filter(Boolean)
+  .join('\n')}
 
 **YOUR TASK:**
 Generate ONE ADVANCED, SPECIFIC feature suggestion that would transform this basic code review tool into a professional-grade AI development platform. Focus on a feature that is:
@@ -487,37 +576,47 @@ Make this suggestion exciting and innovative - a feature that would make develop
   // Check token usage before making API call
   const estimatedTokens = estimateTokens(prompt);
   console.log(`📊 Estimated tokens for prompt: ${estimatedTokens}`);
-  
+
   if (estimatedTokens > MAX_TOKENS) {
-    console.error(`❌ Prompt too large (${estimatedTokens} tokens > ${MAX_TOKENS} limit)`);
+    console.error(
+      `❌ Prompt too large (${estimatedTokens} tokens > ${MAX_TOKENS} limit)`
+    );
     return null;
   }
 
   try {
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a senior software architect and AI specialist who creates detailed, innovative feature suggestions for developer tools. You focus on cutting-edge AI capabilities, modern development practices, and features that would genuinely excite developers.'
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a senior software architect and AI specialist who creates detailed, innovative feature suggestions for developer tools. You focus on cutting-edge AI capabilities, modern development practices, and features that would genuinely excite developers.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        max_tokens: 1500,
+        temperature: 0.8,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
         },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      max_tokens: 1500,
-      temperature: 0.8
-    }, {
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
       }
-    });
+    );
 
     return response.data.choices[0].message.content;
   } catch (error) {
-    console.error('Error calling OpenAI API:', error.response?.data || error.message);
+    console.error(
+      'Error calling OpenAI API:',
+      error.response?.data || error.message
+    );
     return null;
   }
 }
@@ -525,52 +624,63 @@ Make this suggestion exciting and innovative - a feature that would make develop
 // Main execution
 async function main() {
   console.log('🔍 Analyzing AI Code Review Tool repository...');
-  
+
   // Get repository information
   const repoInfo = await getRepositoryInfo();
-  
+
   // Analyze repository structure
   const analysis = analyzeRepositoryStructure();
-  
+
   // Analyze current project features
   const features = analyzeProjectFeatures();
-  
+
   // Get project roadmap
   const roadmap = getProjectRoadmap();
-  
+
   // Read important files
   const fileContents = readImportantFiles();
-  
-  console.log(`📊 Found ${analysis.totalFiles} files and ${analysis.totalDirectories} directories`);
+
+  console.log(
+    `📊 Found ${analysis.totalFiles} files and ${analysis.totalDirectories} directories`
+  );
   console.log(`📁 Top-level items: ${analysis.topLevelItems.length}`);
   console.log(`📄 File types found: ${Object.keys(analysis.fileTypes).length}`);
-  console.log(`🎯 Current features detected: ${Object.entries(features).filter(([,v]) => v).map(([k]) => k).join(', ')}`);
+  console.log(
+    `🎯 Current features detected: ${Object.entries(features)
+      .filter(([, v]) => v)
+      .map(([k]) => k)
+      .join(', ')}`
+  );
   console.log(`🗺️ Roadmap items found: ${roadmap.length}`);
-  
+
   // Generate suggestions with enhanced context
   console.log('🤖 Generating AI-powered feature suggestion...');
-  
+
   // Add feature and roadmap context to the analysis
   const enhancedAnalysis = {
     ...analysis,
     currentFeatures: features,
-    roadmap: roadmap
+    roadmap: roadmap,
   };
-  
-  const suggestions = await generateSuggestions(repoInfo, enhancedAnalysis, fileContents);
-  
+
+  const suggestions = await generateSuggestions(
+    repoInfo,
+    enhancedAnalysis,
+    fileContents
+  );
+
   if (suggestions) {
     // Check for existing similar issues before creating new ones
     console.log('🔍 Checking for existing similar issues...');
     const hasSimilarIssues = await checkForExistingIssues(suggestions);
-    
+
     if (hasSimilarIssues) {
       console.log('⏭️ Skipping issue creation - similar issues already exist');
       // Write a flag to indicate no new issue should be created
       fs.writeFileSync('.github/skip-issue-creation.txt', 'true');
       return;
     }
-    
+
     // Write suggestions to file
     fs.writeFileSync('.github/suggestions.txt', suggestions);
     console.log('✅ AI feature suggestion generated and saved');
@@ -581,4 +691,4 @@ async function main() {
 }
 
 // Run the script
-main().catch(console.error); 
+main().catch(console.error);

@@ -26,37 +26,57 @@ interface VercelWebhookPayload {
 export async function POST(request: NextRequest) {
   try {
     const payload: VercelWebhookPayload = await request.json();
-    
+
     // Verify this is a deployment event
     if (payload.type !== 'deployment') {
-      return NextResponse.json({ message: 'Not a deployment event' }, { status: 200 });
+      return NextResponse.json(
+        { message: 'Not a deployment event' },
+        { status: 200 }
+      );
     }
 
     // Only handle production deployments
     if (payload.deployment.target !== 'production') {
-      return NextResponse.json({ message: 'Not a production deployment' }, { status: 200 });
+      return NextResponse.json(
+        { message: 'Not a production deployment' },
+        { status: 200 }
+      );
     }
 
     // Only handle failed deployments
     if (payload.deployment.state !== 'ERROR') {
-      return NextResponse.json({ message: 'Deployment not in error state' }, { status: 200 });
+      return NextResponse.json(
+        { message: 'Deployment not in error state' },
+        { status: 200 }
+      );
     }
 
     // Create GitHub issue for failed deployment
     const issueCreated = await createDeploymentFailureIssue(payload);
-    
+
     if (issueCreated) {
-      return NextResponse.json({ message: 'Issue created successfully' }, { status: 200 });
+      return NextResponse.json(
+        { message: 'Issue created successfully' },
+        { status: 200 }
+      );
     } else {
-      return NextResponse.json({ message: 'Failed to create issue' }, { status: 500 });
+      return NextResponse.json(
+        { message: 'Failed to create issue' },
+        { status: 500 }
+      );
     }
   } catch (error) {
     console.error('Error processing Vercel webhook:', error);
-    return NextResponse.json({ error: 'Failed to process webhook' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to process webhook' },
+      { status: 500 }
+    );
   }
 }
 
-async function createDeploymentFailureIssue(payload: VercelWebhookPayload): Promise<boolean> {
+async function createDeploymentFailureIssue(
+  payload: VercelWebhookPayload
+): Promise<boolean> {
   const githubToken = process.env.GITHUB_TOKEN;
   if (!githubToken) {
     console.error('GITHUB_TOKEN environment variable is not set');
@@ -78,7 +98,9 @@ async function createDeploymentFailureIssue(payload: VercelWebhookPayload): Prom
 **URL**: ${payload.deployment.url}
 **Timestamp**: ${new Date().toISOString()}
 
-${payload.deployment.error ? `
+${
+  payload.deployment.error
+    ? `
 ## Error Details
 
 **Error Code**: \`${payload.deployment.error.code}\`
@@ -86,7 +108,9 @@ ${payload.deployment.error ? `
 \`\`\`
 ${payload.deployment.error.message}
 \`\`\`
-` : ''}
+`
+    : ''
+}
 
 ## Action Required
 
@@ -107,19 +131,22 @@ ${payload.deployment.error.message}
 `;
 
   try {
-    const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/issues`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${githubToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      body: JSON.stringify({
-        title: issueTitle,
-        body: issueBody,
-        labels: ['deployment-failure', 'production', 'automated', 'urgent']
-      })
-    });
+    const response = await fetch(
+      `https://api.github.com/repos/${repoOwner}/${repoName}/issues`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `token ${githubToken}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/vnd.github.v3+json',
+        },
+        body: JSON.stringify({
+          title: issueTitle,
+          body: issueBody,
+          labels: ['deployment-failure', 'production', 'automated', 'urgent'],
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();

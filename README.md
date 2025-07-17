@@ -9,7 +9,7 @@ An interactive Next.js application that provides instant code analysis, quality 
 Instead of just another generic starter project, this has been transformed into a **genuinely useful developer tool** that:
 
 - ✨ **Instantly analyzes your code** and provides quality scores
-- 💡 **Suggests improvements** with actionable recommendations  
+- 💡 **Suggests improvements** with actionable recommendations
 - 🎯 **Supports multiple languages** (JavaScript, TypeScript, Python, Java, C++, Go)
 - 🔍 **Real-time feedback** as you type and analyze
 - 📊 **Detailed metrics** including complexity, maintainability, and code statistics
@@ -17,22 +17,26 @@ Instead of just another generic starter project, this has been transformed into 
 ## 🚀 Features
 
 ### 🔍 **Instant Code Analysis**
+
 - Paste your code and get immediate quality scoring (0-100%)
 - Real-time metrics: lines of code, complexity, maintainability rating
 - Language-specific analysis rules and best practices
 
 ### 💡 **Smart Suggestions**
+
 - Actionable improvement recommendations
 - Warning, info, and success feedback types
 - Line-by-line suggestions for better code quality
 
 ### 🎯 **Multi-Language Support**
+
 - JavaScript & TypeScript analysis
 - Python code review
 - Java, C++, and Go support
 - Language-specific best practices and patterns
 
 ### 🎨 **Modern UI/UX**
+
 - Clean, professional interface
 - Dark-themed code editor
 - Responsive design for all devices
@@ -42,29 +46,32 @@ Instead of just another generic starter project, this has been transformed into 
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm, yarn, or pnpm
 
 ### Getting Started
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/mcclowes/recursive-site.git
    cd recursive-site
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Run the development server**
+
    ```bash
    npm run dev
    ```
 
 4. **Open your browser**
-   
+
    Navigate to [http://localhost:3000](http://localhost:3000) to start analyzing code!
 
 ### Available Scripts
@@ -96,12 +103,14 @@ Instead of just another generic starter project, this has been transformed into 
 The application includes powerful AI-enhanced code analysis:
 
 ### 🔧 **Rule-Based Analysis** (Always Available)
+
 - Static code analysis with predefined rules
 - Language-specific best practices checking
 - Performance and maintainability scoring
 - Security pattern detection
 
 ### 🚀 **AI-Powered Analysis** (Optional)
+
 - Context-aware code suggestions using OpenAI GPT models
 - Advanced code quality insights
 - Personalized improvement recommendations
@@ -112,11 +121,13 @@ The application includes powerful AI-enhanced code analysis:
 1. **Get an OpenAI API key** from [OpenAI Platform](https://platform.openai.com/account/api-keys)
 
 2. **Create environment file**
+
    ```bash
    cp .env.local.example .env.local
    ```
 
 3. **Add your API key**
+
    ```env
    OPENAI_API_KEY=your_openai_api_key_here
    ```
@@ -129,6 +140,7 @@ The application includes powerful AI-enhanced code analysis:
 ### 📊 **AI Features**
 
 When AI is enabled, you'll get:
+
 - **Context-aware suggestions** tailored to your specific code
 - **Enhanced scoring** that combines rule-based and AI analysis
 - **Categorized feedback** (performance, security, readability, best-practices)
@@ -145,6 +157,7 @@ When AI is enabled, you'll get:
 ## 📈 What's Next?
 
 This foundation is ready for:
+
 - Integration with OpenAI/Claude APIs for advanced AI analysis
 - More programming languages and frameworks
 - Code formatting and auto-fix suggestions
@@ -155,6 +168,7 @@ This foundation is ready for:
 ## 🚀 Deployment
 
 Deploy easily on:
+
 - [Vercel](https://vercel.com) (recommended)
 - [Netlify](https://netlify.com)
 - [Railway](https://railway.app)

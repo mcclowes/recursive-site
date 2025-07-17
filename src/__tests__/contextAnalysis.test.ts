@@ -76,10 +76,10 @@ export default UserComponent;`;
 
 test('Context analysis extracts code information correctly', () => {
   const context = extractCodeContext(testCode, 'javascript');
-  
+
   console.log('Context Analysis Result:');
   console.log(JSON.stringify(context, null, 2));
-  
+
   // Test basic structure
   expect(context.language).toBe('javascript');
   expect(context.functions.length).toBeGreaterThan(0);
@@ -87,7 +87,7 @@ test('Context analysis extracts code information correctly', () => {
   expect(context.imports.length).toBeGreaterThan(0);
   expect(context.patterns.length).toBeGreaterThan(0);
   expect(context.codeStructure).toBeTruthy();
-  
+
   // Test specific extractions
   expect(context.classes).toContain('UserManager');
   expect(context.functions).toContain('fetchUsers');

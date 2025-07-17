@@ -10,7 +10,12 @@ interface CodeEditorProps {
   height?: string;
 }
 
-export default function CodeEditor({ value, onChange, language, height = "400px" }: CodeEditorProps) {
+export default function CodeEditor({
+  value,
+  onChange,
+  language,
+  height = '400px',
+}: CodeEditorProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const handleEditorDidMount = () => {
@@ -22,10 +27,12 @@ export default function CodeEditor({ value, onChange, language, height = "400px"
   };
 
   return (
-    <div className="relative border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+    <div className='relative border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden'>
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-10">
-          <div className="text-gray-500 dark:text-gray-400">Loading editor...</div>
+        <div className='absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-10'>
+          <div className='text-gray-500 dark:text-gray-400'>
+            Loading editor...
+          </div>
         </div>
       )}
       <Editor
@@ -34,10 +41,14 @@ export default function CodeEditor({ value, onChange, language, height = "400px"
         value={value}
         onChange={handleEditorChange}
         onMount={handleEditorDidMount}
-        theme="vs-dark"
-        loading={<div className="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-800">
-          <div className="text-gray-500 dark:text-gray-400">Loading Monaco Editor...</div>
-        </div>}
+        theme='vs-dark'
+        loading={
+          <div className='flex items-center justify-center h-full bg-gray-100 dark:bg-gray-800'>
+            <div className='text-gray-500 dark:text-gray-400'>
+              Loading Monaco Editor...
+            </div>
+          </div>
+        }
         options={{
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
