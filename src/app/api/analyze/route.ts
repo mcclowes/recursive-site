@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { extractCodeContext } from '@/utils/contextAnalysis';
 
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -37,45 +38,26 @@ async function getAIAnalysis(code: string, language: string): Promise<AIAnalysis
   }
 
   try {
-    const prompt = `You are an expert code reviewer. Analyze the following ${language} code and provide specific, actionable improvement suggestions. Focus on:
-1. Code quality and best practices
-2. Performance optimizations
-3. Security considerations
-4. Readability and maintainability
-5. Language-specific improvements
-
-Code to analyze:
-\`\`\`${language}
-${code}
-\`\`\`
-
-Provide your response in the following JSON format:
-{
-  "score": <number between 0-100>,
-  "suggestions": [
-    {
-      "type": "suggestion|warning|info|success",
-      "message": "specific suggestion text",
-      "line": <line number or 1 if general>,
-      "category": "performance|security|readability|best-practices|style"
-    }
-  ]
-}`;
+    // Extract context from the code
+    const context = extractCodeContext(code, language);
+    
+    // Create context-aware prompt
+    const contextPrompt = createContextAwarePrompt(code, language, context);
 
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: "You are an expert code reviewer. Provide constructive, specific feedback in JSON format."
+          content: "You are an expert code reviewer with deep knowledge of software engineering best practices, design patterns, and modern development approaches. Provide constructive, context-aware feedback in the specified JSON format."
         },
         {
           role: "user",
-          content: prompt
+          content: contextPrompt
         }
       ],
-      max_tokens: 1000,
-      temperature: 0.3,
+      max_tokens: 1500,
+      temperature: 0.2,
     });
 
     const content = response.choices[0]?.message?.content;
@@ -86,8 +68,24 @@ Provide your response in the following JSON format:
     // Parse AI response
     const aiResult = JSON.parse(content);
     
+    // Add unique IDs to suggestions and enrich with context
+    const enrichedSuggestions = (aiResult.suggestions || []).map((suggestion: {
+      type: string;
+      message: string;
+      explanation?: string;
+      line: number;
+      category?: string;
+      confidence?: number;
+    }, index: number) => ({
+      ...suggestion,
+      id: `ai-${Date.now()}-${index}`,
+      source: 'AI' as const,
+      explanation: suggestion.explanation || suggestion.message,
+      confidence: suggestion.confidence || 0.8
+    }));
+    
     return {
-      suggestions: aiResult.suggestions || [],
+      suggestions: enrichedSuggestions,
       aiScore: aiResult.score || 0,
       available: true
     };
@@ -100,6 +98,54 @@ Provide your response in the following JSON format:
       error: 'AI analysis temporarily unavailable'
     };
   }
+}
+
+function createContextAwarePrompt(code: string, language: string, context: {
+  functions: string[];
+  classes: string[];
+  imports: string[];
+  variables: string[];
+  complexity: number;
+  patterns: string[];
+  language: string;
+  codeStructure: string;
+}): string {
+  const contextInfo = context.codeStructure ? `\n\nCode Structure: ${context.codeStructure}` : '';
+  const patterns = context.patterns.length > 0 ? `\nDetected Patterns: ${context.patterns.join(', ')}` : '';
+  const complexity = `\nComplexity Score: ${context.complexity}`;
+  
+  return `You are reviewing ${language} code with the following context:${contextInfo}${patterns}${complexity}
+
+Please analyze the code and provide specific, actionable improvement suggestions. Consider:
+
+1. **Context-Aware Improvements**: Based on the detected functions, classes, and patterns
+2. **Best Practices**: Language-specific best practices and conventions
+3. **Performance**: Optimization opportunities based on the code structure
+4. **Security**: Potential security vulnerabilities or concerns
+5. **Maintainability**: Code readability and long-term maintainability
+6. **Design Patterns**: Suggest appropriate design patterns if applicable
+
+Code to analyze:
+\`\`\`${language}
+${code}
+\`\`\`
+
+Provide your response in the following JSON format:
+{
+  "score": <number between 0-100>,
+  "suggestions": [
+    {
+      "type": "suggestion|warning|info|success",
+      "message": "specific, actionable suggestion",
+      "explanation": "detailed explanation of why this improvement is recommended",
+      "line": <line number or 1 if general>,
+      "category": "performance|security|readability|best-practices|design-patterns|maintainability",
+      "confidence": <number between 0-1 indicating confidence in suggestion>
+    }
+  ]
+}
+
+Focus on providing context-aware suggestions that consider the specific code structure and patterns detected.`;
 }
 
 interface RuleBasedAnalysis {
@@ -126,11 +172,18 @@ interface Suggestion {
   line: number;
   source?: 'AI' | 'rule-based';
   category?: string;
+  explanation?: string;
+  confidence?: number;
+  id?: string;
 }
 
 function combineAnalyses(ruleBasedAnalysis: RuleBasedAnalysis, aiAnalysis: AIAnalysis) {
   const combinedSuggestions = [
-    ...ruleBasedAnalysis.suggestions,
+    ...ruleBasedAnalysis.suggestions.map((suggestion: Suggestion, index: number) => ({
+      ...suggestion,
+      id: suggestion.id || `rule-${Date.now()}-${index}`,
+      source: 'rule-based' as const
+    })),
     ...aiAnalysis.suggestions.map((suggestion: Suggestion) => ({
       ...suggestion,
       source: 'AI' as const
@@ -159,6 +212,7 @@ function analyzeCode(code: string, language: string): RuleBasedAnalysis {
   const lines = code.split('\n');
   const suggestions: Suggestion[] = [];
   let score = 85;
+  let suggestionIndex = 0;
 
   // Basic analysis rules
   if (language === 'javascript' || language === 'typescript') {
@@ -167,7 +221,9 @@ function analyzeCode(code: string, language: string): RuleBasedAnalysis {
       suggestions.push({
         type: 'warning',
         message: 'Consider using "let" or "const" instead of "var" for better scoping',
-        line: lines.findIndex(line => line.includes('var ')) + 1
+        line: lines.findIndex(line => line.includes('var ')) + 1,
+        id: `rule-${Date.now()}-${suggestionIndex++}`,
+        category: 'best-practices'
       });
       score -= 5;
     }
@@ -177,7 +233,9 @@ function analyzeCode(code: string, language: string): RuleBasedAnalysis {
       suggestions.push({
         type: 'info',
         message: 'Remove console.log statements before production',
-        line: lines.findIndex(line => line.includes('console.log')) + 1
+        line: lines.findIndex(line => line.includes('console.log')) + 1,
+        id: `rule-${Date.now()}-${suggestionIndex++}`,
+        category: 'best-practices'
       });
       score -= 2;
     }
@@ -196,7 +254,9 @@ function analyzeCode(code: string, language: string): RuleBasedAnalysis {
       suggestions.push({
         type: 'warning',
         message: 'Consider adding semicolons for consistency',
-        line: lines.findIndex(line => line === missingSemicolons[0]) + 1
+        line: lines.findIndex(line => line === missingSemicolons[0]) + 1,
+        id: `rule-${Date.now()}-${suggestionIndex++}`,
+        category: 'style'
       });
       score -= 3;
     }
@@ -207,7 +267,9 @@ function analyzeCode(code: string, language: string): RuleBasedAnalysis {
     suggestions.push({
       type: 'suggestion',
       message: 'Consider breaking down large functions into smaller ones',
-      line: 1
+      line: 1,
+      id: `rule-${Date.now()}-${suggestionIndex++}`,
+      category: 'maintainability'
     });
     score -= 5;
   }
@@ -223,7 +285,9 @@ function analyzeCode(code: string, language: string): RuleBasedAnalysis {
     suggestions.push({
       type: 'info',
       message: 'Inconsistent indentation detected',
-      line: 1
+      line: 1,
+      id: `rule-${Date.now()}-${suggestionIndex++}`,
+      category: 'readability'
     });
     score -= 2;
   }
@@ -234,7 +298,9 @@ function analyzeCode(code: string, language: string): RuleBasedAnalysis {
       suggestions.push({
         type: 'success',
         message: 'Great use of modern variable declarations!',
-        line: lines.findIndex(line => line.includes('const ') || line.includes('let ')) + 1
+        line: lines.findIndex(line => line.includes('const ') || line.includes('let ')) + 1,
+        id: `rule-${Date.now()}-${suggestionIndex++}`,
+        category: 'best-practices'
       });
       score += 2;
     }
@@ -243,7 +309,9 @@ function analyzeCode(code: string, language: string): RuleBasedAnalysis {
       suggestions.push({
         type: 'success',
         message: 'Excellent use of async/await for asynchronous operations!',
-        line: lines.findIndex(line => line.includes('async ') || line.includes('await ')) + 1
+        line: lines.findIndex(line => line.includes('async ') || line.includes('await ')) + 1,
+        id: `rule-${Date.now()}-${suggestionIndex++}`,
+        category: 'best-practices'
       });
       score += 3;
     }
