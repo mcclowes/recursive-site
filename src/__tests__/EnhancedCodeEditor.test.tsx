@@ -7,17 +7,23 @@ import EnhancedCodeEditor from '@/components/EnhancedCodeEditor';
 
 // Mock Monaco Editor
 jest.mock('@monaco-editor/react', () => ({
-  Editor: ({ onChange, value }: { onChange: (value: string) => void; value: string }) => {
+  Editor: ({
+    onChange,
+    value,
+  }: {
+    onChange: (value: string) => void;
+    value: string;
+  }) => {
     return (
-      <div data-testid="monaco-editor">
+      <div data-testid='monaco-editor'>
         <textarea
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          data-testid="editor-textarea"
+          onChange={e => onChange(e.target.value)}
+          data-testid='editor-textarea'
         />
       </div>
     );
-  }
+  },
 }));
 
 // Mock fetch
@@ -28,8 +34,8 @@ jest.mock('react-hot-toast', () => ({
   __esModule: true,
   default: {
     success: jest.fn(),
-    error: jest.fn()
-  }
+    error: jest.fn(),
+  },
 }));
 
 describe('EnhancedCodeEditor', () => {
@@ -42,12 +48,12 @@ describe('EnhancedCodeEditor', () => {
     language: 'javascript',
     height: '400px',
     enableRealTimeAnalysis: true,
-    onSuggestionsChange: mockOnSuggestionsChange
+    onSuggestionsChange: mockOnSuggestionsChange,
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock successful API response
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
@@ -65,10 +71,10 @@ describe('EnhancedCodeEditor', () => {
             severity: 'info',
             isInline: true,
             actionable: true,
-            quickFix: null
-          }
-        ]
-      })
+            quickFix: null,
+          },
+        ],
+      }),
     });
   });
 
@@ -76,7 +82,9 @@ describe('EnhancedCodeEditor', () => {
     render(<EnhancedCodeEditor {...defaultProps} />);
 
     expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
-    expect(screen.getByTestId('editor-textarea')).toHaveValue(defaultProps.value);
+    expect(screen.getByTestId('editor-textarea')).toHaveValue(
+      defaultProps.value
+    );
   });
 
   it('shows real-time analysis indicator when enabled', () => {
@@ -85,7 +93,9 @@ describe('EnhancedCodeEditor', () => {
   });
 
   it('hides real-time analysis indicator when disabled', () => {
-    render(<EnhancedCodeEditor {...defaultProps} enableRealTimeAnalysis={false} />);
+    render(
+      <EnhancedCodeEditor {...defaultProps} enableRealTimeAnalysis={false} />
+    );
     expect(screen.queryByText('Live Analysis')).not.toBeInTheDocument();
   });
 
@@ -99,8 +109,10 @@ describe('EnhancedCodeEditor', () => {
   });
 
   it('handles API errors gracefully', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
-    
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error('Network error')
+    );
+
     render(<EnhancedCodeEditor {...defaultProps} />);
 
     // Component should still render without crashing
@@ -110,7 +122,7 @@ describe('EnhancedCodeEditor', () => {
   it('handles API response errors gracefully', async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
-      json: async () => ({ error: 'Server error' })
+      json: async () => ({ error: 'Server error' }),
     });
 
     render(<EnhancedCodeEditor {...defaultProps} />);

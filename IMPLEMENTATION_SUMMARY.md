@@ -7,6 +7,7 @@ A complete webhook system that automatically creates GitHub issues when Vercel p
 ## Key Components
 
 ### 1. Webhook Endpoint (`/api/vercel-webhook`)
+
 - **Location**: `src/app/api/vercel-webhook/route.ts`
 - **Purpose**: Receives Vercel deployment notifications and creates GitHub issues for production failures
 - **Features**:
@@ -16,6 +17,7 @@ A complete webhook system that automatically creates GitHub issues when Vercel p
   - Proper error handling and logging
 
 ### 2. Environment Configuration
+
 - **File**: `.env.example`
 - **Variables**:
   - `GITHUB_TOKEN`: Personal access token for GitHub API
@@ -23,6 +25,7 @@ A complete webhook system that automatically creates GitHub issues when Vercel p
   - `GITHUB_REPOSITORY_NAME`: Repository name (recursive-site)
 
 ### 3. Documentation
+
 - **File**: `docs/VERCEL_WEBHOOK_SETUP.md`
 - **Contents**:
   - Complete setup instructions
@@ -32,6 +35,7 @@ A complete webhook system that automatically creates GitHub issues when Vercel p
   - Security considerations
 
 ### 4. Testing Tools
+
 - **File**: `scripts/test-webhook.js`
 - **Purpose**: Local testing of the webhook endpoint
 - **Usage**: `node scripts/test-webhook.js`
@@ -52,6 +56,7 @@ A complete webhook system that automatically creates GitHub issues when Vercel p
 ## Testing Results
 
 The webhook endpoint was successfully tested with:
+
 - ✅ Production deployment failures (creates issues when token is available)
 - ✅ Successful deployments (ignores with proper message)
 - ✅ Preview/branch deployments (ignores with proper message)

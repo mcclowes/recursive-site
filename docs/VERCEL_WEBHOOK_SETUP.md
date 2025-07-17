@@ -116,6 +116,7 @@ The webhook expects a payload from Vercel with the following structure:
 ### Logs
 
 The webhook endpoint logs information about:
+
 - Received webhook events
 - Filtering decisions
 - Issue creation success/failure
@@ -152,9 +153,11 @@ When a deployment fails, an issue like this will be created:
 ## Error Details
 
 **Error Code**: `BUILD_ERROR`
-**Error Message**: 
+**Error Message**:
 ```
+
 Build failed due to TypeScript errors
+
 ```
 
 ## Action Required
