@@ -209,6 +209,10 @@ describe('Home Page Integration', () => {
 
     render(<Home />)
 
+    // Switch to basic editor for testing
+    const basicEditorToggle = screen.getByText('🚀 Real-time AI')
+    fireEvent.click(basicEditorToggle)
+
     const textarea = screen.getByRole('textbox')
     fireEvent.change(textarea, { target: { value: 'var x = 10;\nconsole.log(x);' } })
 
