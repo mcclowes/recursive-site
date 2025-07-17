@@ -93,10 +93,54 @@ Instead of just another generic starter project, this has been transformed into 
 
 ## 🤖 AI Integration
 
-The application includes both:
-- **Built-in code analysis** with predefined rules and patterns
-- **AI-powered repository analysis** via GitHub Actions (existing feature)
-- **Extensible architecture** ready for additional AI integrations
+The application includes powerful AI-enhanced code analysis:
+
+### 🔧 **Rule-Based Analysis** (Always Available)
+- Static code analysis with predefined rules
+- Language-specific best practices checking
+- Performance and maintainability scoring
+- Security pattern detection
+
+### 🚀 **AI-Powered Analysis** (Optional)
+- Context-aware code suggestions using OpenAI GPT models
+- Advanced code quality insights
+- Personalized improvement recommendations
+- Enhanced scoring with AI-generated feedback
+
+### 🛠️ **Setting Up AI Integration**
+
+1. **Get an OpenAI API key** from [OpenAI Platform](https://platform.openai.com/account/api-keys)
+
+2. **Create environment file**
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+3. **Add your API key**
+   ```env
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+4. **Restart the development server**
+   ```bash
+   npm run dev
+   ```
+
+### 📊 **AI Features**
+
+When AI is enabled, you'll get:
+- **Context-aware suggestions** tailored to your specific code
+- **Enhanced scoring** that combines rule-based and AI analysis
+- **Categorized feedback** (performance, security, readability, best-practices)
+- **AI indicator** showing when AI analysis is active
+- **Graceful fallback** to rule-based analysis if AI is unavailable
+
+### 🔐 **Security & Privacy**
+
+- API keys are stored securely in environment variables
+- Code is not stored or logged
+- All analysis happens in real-time
+- No data persistence or external sharing
 
 ## 📈 What's Next?
 

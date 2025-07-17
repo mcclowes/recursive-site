@@ -4,7 +4,7 @@ import Home from '../app/page'
 // Mock fetch for API calls
 global.fetch = jest.fn()
 
-describe('Home Page', () => {
+describe('AI Code Review Tool', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -62,13 +62,23 @@ describe('Home Page', () => {
   it('renders the feature cards', () => {
     render(<Home />)
     
-    const instantAnalysisCard = screen.getByText('Instant Analysis')
-    const smartSuggestionsCard = screen.getByText('Smart Suggestions')
-    const multipleLanguagesCard = screen.getByText('Multiple Languages')
+    const instantAnalysis = screen.getByText('Instant Analysis')
+    const aiPoweredSuggestions = screen.getByText('AI-Powered Suggestions')
+    const multipleLanguages = screen.getByText('Multiple Languages')
     
-    expect(instantAnalysisCard).toBeInTheDocument()
-    expect(smartSuggestionsCard).toBeInTheDocument()
-    expect(multipleLanguagesCard).toBeInTheDocument()
+    expect(instantAnalysis).toBeInTheDocument()
+    expect(aiPoweredSuggestions).toBeInTheDocument()
+    expect(multipleLanguages).toBeInTheDocument()
+  })
+
+  it('renders the analysis type indicators', () => {
+    render(<Home />)
+    
+    const ruleBasedIndicator = screen.getByText('Rule-based Analysis')
+    const aiEnhancedIndicator = screen.getByText('AI-Enhanced Analysis')
+    
+    expect(ruleBasedIndicator).toBeInTheDocument()
+    expect(aiEnhancedIndicator).toBeInTheDocument()
   })
 
   it('updates code when textarea changes', () => {
@@ -87,5 +97,15 @@ describe('Home Page', () => {
     fireEvent.change(languageSelect, { target: { value: 'typescript' } })
     
     expect(languageSelect).toHaveValue('typescript')
+  })
+
+  it('renders javascript option in language selector', () => {
+    render(<Home />)
+    
+    const languageSelector = screen.getByRole('combobox')
+    expect(languageSelector).toBeInTheDocument()
+    
+    const javascriptOption = screen.getByRole('option', { name: 'JavaScript' })
+    expect(javascriptOption).toBeInTheDocument()
   })
 })

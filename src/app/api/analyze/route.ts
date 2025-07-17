@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import OpenAI from 'openai';
+
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+}) : null;
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,19 +13,151 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Code and language are required' }, { status: 400 });
     }
 
-    // Simple code analysis - in a real app, you'd use AI here
-    const analysis = analyzeCode(code, language);
+    // Get both rule-based and AI analysis
+    const ruleBasedAnalysis = analyzeCode(code, language);
+    const aiAnalysis = await getAIAnalysis(code, language);
     
-    return NextResponse.json({ analysis });
+    // Combine both analyses
+    const combinedAnalysis = combineAnalyses(ruleBasedAnalysis, aiAnalysis);
+    
+    return NextResponse.json({ analysis: combinedAnalysis });
   } catch (error) {
     console.error('Error analyzing code:', error);
     return NextResponse.json({ error: 'Failed to analyze code' }, { status: 500 });
   }
 }
 
-function analyzeCode(code: string, language: string) {
+async function getAIAnalysis(code: string, language: string): Promise<AIAnalysis> {
+  if (!openai) {
+    return {
+      suggestions: [],
+      aiScore: 0,
+      available: false
+    };
+  }
+
+  try {
+    const prompt = `You are an expert code reviewer. Analyze the following ${language} code and provide specific, actionable improvement suggestions. Focus on:
+1. Code quality and best practices
+2. Performance optimizations
+3. Security considerations
+4. Readability and maintainability
+5. Language-specific improvements
+
+Code to analyze:
+\`\`\`${language}
+${code}
+\`\`\`
+
+Provide your response in the following JSON format:
+{
+  "score": <number between 0-100>,
+  "suggestions": [
+    {
+      "type": "suggestion|warning|info|success",
+      "message": "specific suggestion text",
+      "line": <line number or 1 if general>,
+      "category": "performance|security|readability|best-practices|style"
+    }
+  ]
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert code reviewer. Provide constructive, specific feedback in JSON format."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 1000,
+      temperature: 0.3,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from AI');
+    }
+
+    // Parse AI response
+    const aiResult = JSON.parse(content);
+    
+    return {
+      suggestions: aiResult.suggestions || [],
+      aiScore: aiResult.score || 0,
+      available: true
+    };
+  } catch (error) {
+    console.error('AI analysis error:', error);
+    return {
+      suggestions: [],
+      aiScore: 0,
+      available: false,
+      error: 'AI analysis temporarily unavailable'
+    };
+  }
+}
+
+interface RuleBasedAnalysis {
+  score: number;
+  suggestions: Suggestion[];
+  metrics: {
+    lines: number;
+    characters: number;
+    complexity: number;
+    maintainability: string;
+  };
+}
+
+interface AIAnalysis {
+  suggestions: Suggestion[];
+  aiScore: number;
+  available: boolean;
+  error?: string;
+}
+
+interface Suggestion {
+  type: 'warning' | 'info' | 'suggestion' | 'success';
+  message: string;
+  line: number;
+  source?: 'AI' | 'rule-based';
+  category?: string;
+}
+
+function combineAnalyses(ruleBasedAnalysis: RuleBasedAnalysis, aiAnalysis: AIAnalysis) {
+  const combinedSuggestions = [
+    ...ruleBasedAnalysis.suggestions,
+    ...aiAnalysis.suggestions.map((suggestion: Suggestion) => ({
+      ...suggestion,
+      source: 'AI' as const
+    }))
+  ];
+
+  // Calculate combined score (weighted average)
+  const ruleBasedWeight = 0.4;
+  const aiWeight = 0.6;
+  const combinedScore = aiAnalysis.available 
+    ? Math.round((ruleBasedAnalysis.score * ruleBasedWeight) + (aiAnalysis.aiScore * aiWeight))
+    : ruleBasedAnalysis.score;
+
+  return {
+    score: combinedScore,
+    suggestions: combinedSuggestions,
+    metrics: {
+      ...ruleBasedAnalysis.metrics,
+      aiAnalysisAvailable: aiAnalysis.available,
+      aiError: aiAnalysis.error
+    }
+  };
+}
+
+function analyzeCode(code: string, language: string): RuleBasedAnalysis {
   const lines = code.split('\n');
-  const suggestions = [];
+  const suggestions: Suggestion[] = [];
   let score = 85;
 
   // Basic analysis rules

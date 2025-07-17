@@ -8,6 +8,8 @@ interface Suggestion {
   type: 'warning' | 'info' | 'suggestion' | 'success';
   message: string;
   line: number;
+  source?: 'AI' | 'rule-based';
+  category?: string;
 }
 
 interface Analysis {
@@ -18,6 +20,8 @@ interface Analysis {
     characters: number;
     complexity: number;
     maintainability: string;
+    aiAnalysisAvailable?: boolean;
+    aiError?: string;
   };
 }
 
@@ -108,6 +112,16 @@ export default function Home() {
             <p className="text-lg text-gray-600 dark:text-gray-300">
               Get instant AI-powered code analysis and improvement suggestions
             </p>
+            <div className="mt-4 flex items-center justify-center gap-4">
+              <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm">
+                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                Rule-based Analysis
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                AI-Enhanced Analysis
+              </div>
+            </div>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
@@ -203,9 +217,23 @@ export default function Home() {
 
                   {/* Suggestions */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
-                      Suggestions ({analysis.suggestions.length})
-                    </h3>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+                        Suggestions ({analysis.suggestions.length})
+                      </h3>
+                      {analysis.metrics.aiAnalysisAvailable && (
+                        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                          AI Enhanced
+                        </div>
+                      )}
+                      {analysis.metrics.aiError && (
+                        <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+                          <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                          AI Unavailable
+                        </div>
+                      )}
+                    </div>
                     <div className="space-y-3 max-h-64 overflow-y-auto">
                       {analysis.suggestions.map((suggestion, index) => (
                         <div
@@ -215,8 +243,20 @@ export default function Home() {
                           <div className="flex items-start gap-2">
                             <span className="text-lg">{getSuggestionIcon(suggestion.type)}</span>
                             <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-800 dark:text-white">
-                                Line {suggestion.line}
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="text-sm font-medium text-gray-800 dark:text-white">
+                                  Line {suggestion.line}
+                                </div>
+                                {suggestion.source === 'AI' && (
+                                  <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full">
+                                    AI
+                                  </span>
+                                )}
+                                {suggestion.category && (
+                                  <span className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
+                                    {suggestion.category}
+                                  </span>
+                                )}
                               </div>
                               <div className="text-sm text-gray-600 dark:text-gray-300">
                                 {suggestion.message}
@@ -261,10 +301,10 @@ export default function Home() {
               <div className="text-center">
                 <div className="text-3xl mb-3">💡</div>
                 <h3 className="font-semibold text-gray-800 dark:text-white mb-2">
-                  Smart Suggestions
+                  AI-Powered Suggestions
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 text-sm">
-                  Receive actionable recommendations to improve your code
+                  Get context-aware recommendations from advanced AI models
                 </p>
               </div>
               <div className="text-center">
