@@ -1,7 +1,14 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import Home from '../app/page'
 
+// Mock fetch for API calls
+global.fetch = jest.fn()
+
 describe('AI Code Review Tool', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
   it('renders the main heading', () => {
     render(<Home />)
     
@@ -20,21 +27,36 @@ describe('AI Code Review Tool', () => {
   it('renders the code editor section', () => {
     render(<Home />)
     
-    const codeEditorHeading = screen.getByRole('heading', { name: 'Code Editor' })
+    const codeEditorHeading = screen.getByText('Code Editor')
     expect(codeEditorHeading).toBeInTheDocument()
     
-    const analyzeButton = screen.getByRole('button', { name: /Analyze Code/ })
-    expect(analyzeButton).toBeInTheDocument()
+    const textarea = screen.getByRole('textbox')
+    expect(textarea).toBeInTheDocument()
   })
 
   it('renders the analysis results section', () => {
     render(<Home />)
     
-    const resultsHeading = screen.getByRole('heading', { name: 'Analysis Results' })
-    expect(resultsHeading).toBeInTheDocument()
+    const analysisHeading = screen.getByText('Analysis Results')
+    expect(analysisHeading).toBeInTheDocument()
     
-    const placeholder = screen.getByText('Enter your code and click "Analyze Code" to get started')
-    expect(placeholder).toBeInTheDocument()
+    const placeholderText = screen.getByText('Enter your code and click "Analyze Code" to get started')
+    expect(placeholderText).toBeInTheDocument()
+  })
+
+  it('renders the language selector', () => {
+    render(<Home />)
+    
+    const languageSelect = screen.getByRole('combobox')
+    expect(languageSelect).toBeInTheDocument()
+    expect(languageSelect).toHaveValue('javascript')
+  })
+
+  it('renders the analyze button', () => {
+    render(<Home />)
+    
+    const analyzeButton = screen.getByRole('button', { name: /analyze code/i })
+    expect(analyzeButton).toBeInTheDocument()
   })
 
   it('renders the feature cards', () => {
@@ -59,7 +81,25 @@ describe('AI Code Review Tool', () => {
     expect(aiEnhancedIndicator).toBeInTheDocument()
   })
 
-  it('renders the language selector', () => {
+  it('updates code when textarea changes', () => {
+    render(<Home />)
+    
+    const textarea = screen.getByRole('textbox')
+    fireEvent.change(textarea, { target: { value: 'console.log("test");' } })
+    
+    expect(textarea).toHaveValue('console.log("test");')
+  })
+
+  it('updates language when select changes', () => {
+    render(<Home />)
+    
+    const languageSelect = screen.getByRole('combobox')
+    fireEvent.change(languageSelect, { target: { value: 'typescript' } })
+    
+    expect(languageSelect).toHaveValue('typescript')
+  })
+
+  it('renders javascript option in language selector', () => {
     render(<Home />)
     
     const languageSelector = screen.getByRole('combobox')

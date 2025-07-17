@@ -39,7 +39,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
-                body: '🤖 Copilot has been automatically assigned to this issue.'
+                body: '🤖 **Copilot has been automatically assigned to this issue.**\n\nI\'ll help you implement this feature! Feel free to ask questions or request guidance on the implementation approach.'
               });
               
             } catch (error) {
@@ -50,6 +50,6 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
-                body: '⚠️ Unable to automatically assign Copilot to this issue. This may be due to repository settings or Copilot availability. Please manually assign if needed.'
+                body: '⚠️ **Unable to automatically assign Copilot to this issue.**\n\nThis may be due to:\n- Repository settings or permissions\n- Copilot availability in this repository\n- GitHub API limitations\n\nPlease manually assign Copilot or another team member if needed.'
               });
             }
