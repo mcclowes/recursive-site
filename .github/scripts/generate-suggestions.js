@@ -300,7 +300,7 @@ async function checkForExistingIssues(suggestions) {
 
     if (recentIssues.length === 0) {
       console.log('No existing AI suggestion issues found');
-      return false;
+      return { hasSimilar: false, similarityData: null };
     }
 
     // Extract topics and categories from current suggestions
@@ -312,6 +312,10 @@ async function checkForExistingIssues(suggestions) {
     ); // Show first 10 topics
 
     // Check each recent issue for similarity
+    let highestSimilarity = 0;
+    let mostSimilarIssue = null;
+    let overlapCategories = [];
+
     for (const issue of recentIssues) {
       const issueTopicData = extractTopics(issue.body);
       const similarity = calculateSimilarity(currentTopicData, issueTopicData);
@@ -331,6 +335,15 @@ async function checkForExistingIssues(suggestions) {
       console.log(`  Raw similarity: ${similarity.toFixed(3)}`);
       console.log(`  Adjusted similarity: ${adjustedSimilarity.toFixed(3)}`);
       console.log(`  Days old: ${daysSinceCreation.toFixed(1)}`);
+
+      // Track highest similarity for potential use in outlandish mode
+      if (adjustedSimilarity > highestSimilarity) {
+        highestSimilarity = adjustedSimilarity;
+        mostSimilarIssue = issue;
+        overlapCategories = [...currentTopicData.categories].filter(x =>
+          issueTopicData.categories.includes(x)
+        );
+      }
 
       // More aggressive similarity threshold for better duplicate detection
       // Different thresholds based on category overlap
@@ -364,16 +377,25 @@ async function checkForExistingIssues(suggestions) {
         console.log(
           `⚠️ Similar issue found: #${issue.number} (adjusted similarity: ${adjustedSimilarity.toFixed(3)}, threshold: ${similarityThreshold})`
         );
-        return true;
+        return {
+          hasSimilar: true,
+          similarityData: {
+            highestSimilarity,
+            mostSimilarIssue,
+            overlapCategories,
+            currentCategories: currentTopicData.categories,
+            recentIssues: recentIssues.slice(0, 5) // Keep recent issues for context
+          }
+        };
       }
     }
 
     console.log('✅ No similar issues found');
-    return false;
+    return { hasSimilar: false, similarityData: null };
   } catch (error) {
     console.error('Error checking for existing issues:', error.message);
     // If we can't check, allow creation to be safe
-    return false;
+    return { hasSimilar: false, similarityData: null };
   }
 }
 
@@ -727,6 +749,191 @@ function calculateTopicSimilarity(topics1, topics2) {
 
 // Function to call OpenAI API
 async function generateSuggestions(repoInfo, analysis, fileContents) {
+  return await generateSuggestionsWithRetry(repoInfo, analysis, fileContents, 0, null);
+}
+
+// Function to generate outlandish suggestions when similarity is detected
+async function generateOutlandishSuggestions(repoInfo, analysis, fileContents, similarityData) {
+  console.log('🎭 Generating OUTLANDISH suggestions to avoid similarity...');
+  
+  // Build a list of categories and topics to explicitly avoid
+  const avoidCategories = similarityData.overlapCategories;
+  const recentTitles = similarityData.recentIssues.map(issue => issue.title);
+  
+  console.log('Categories to avoid:', avoidCategories);
+  console.log('Recent titles to avoid similarity with:', recentTitles);
+
+  // Create an extremely diverse, outlandish prompt
+  const prompt = `
+You are an avant-garde software innovation expert specializing in RADICAL, UNCONVENTIONAL developer experiences. You are analyzing the "recursive-site" repository, which is an AI Code Review Tool.
+
+**CRITICAL CONSTRAINT - AVOID THESE OVER-SUGGESTED CATEGORIES:**
+❌ ABSOLUTELY DO NOT suggest anything related to: ${avoidCategories.join(', ')}
+❌ AVOID anything similar to these recent suggestions: ${recentTitles.join('; ')}
+
+**RECENT ISSUES HAVE BEEN TOO FOCUSED ON:**
+- AI-powered code refactoring and improvement
+- Context-aware code analysis
+- Smart code suggestions
+- Performance optimization
+- Basic AI integration
+
+**YOUR MISSION: BE RADICALLY DIFFERENT**
+Generate ONE completely OUTLANDISH, UNCONVENTIONAL feature that would make developers say "WOW, I've never seen that before!" Focus on something that:
+
+1. **BREAKS CONVENTIONAL PATTERNS**: Not typical code review/analysis features
+2. **USES CUTTING-EDGE TECH**: AR/VR, blockchain, IoT, quantum, biometrics, voice, gesture control, etc.
+3. **CREATES EMOTIONAL CONNECTION**: Gaming, social, creative, artistic, musical elements
+4. **SOLVES UNIQUE PROBLEMS**: Developer wellness, environmental impact, accessibility in new ways
+5. **IS GENUINELY INNOVATIVE**: Something that would get featured in tech blogs as "revolutionary"
+
+**CHOOSE ONE RADICALLY DIFFERENT FOCUS AREA:**
+- 🎮 **Gamification & Developer Engagement**: Achievement systems, multiplayer coding, code battles
+- 🌱 **Environmental & Sustainability**: Carbon footprint tracking, green coding metrics, eco-friendly development
+- 🎨 **Creative & Artistic**: Code visualization as art, musical code composition, creative coding tools
+- 🧠 **Developer Wellness**: Mental health tracking, break reminders, stress monitoring, mindfulness
+- 🌍 **Social & Community**: Developer networking, mentorship matching, knowledge sharing platforms
+- 🔮 **Futuristic Interfaces**: Voice coding, gesture control, AR/VR development environments
+- 🎵 **Audio & Music**: Code sonification, music-based programming, audio feedback systems
+- 📊 **Data Visualization**: 3D code visualization, interactive code maps, immersive analytics
+- 🤖 **AI Personality**: AI companion, emotional AI feedback, personalized AI coaching
+- 🔒 **Privacy & Security**: Blockchain code verification, decentralized development, privacy-first tools
+- 🏥 **Accessibility & Inclusion**: Disability-friendly coding tools, inclusive design features
+- 🚀 **Space & Sci-Fi**: Cosmic themes, space exploration metaphors, futuristic interfaces
+
+**REPOSITORY CONTEXT:**
+This tool currently has basic code analysis and editing. Transform it into something UNPRECEDENTED.
+
+**TECHNICAL CONSTRAINTS:**
+- Must be technically feasible with current technology
+- Should integrate with the existing Next.js/TypeScript stack
+- Can use external APIs, services, or hardware
+- Implementation should be 1-3 weeks of work
+
+**OUTPUT FORMAT:**
+Use this exact format:
+
+# 🚀 AI Code Review Tool - OUTLANDISH Feature Suggestion
+
+## 🎯 [Completely Unique Feature Name]
+
+**Revolutionary Impact:** [Describe how this changes everything about developer experience]
+
+**Technical Implementation:**
+[Detailed technical approach using genuinely innovative technologies]
+
+**Code Example:**
+\`\`\`javascript
+// Include futuristic/innovative code snippet
+\`\`\`
+
+**Integration Points:**
+- [How it transforms existing features]
+- [Required cutting-edge changes]
+
+**Why This Is Groundbreaking:**
+[Explain why this has never been done before and why it's revolutionary]
+
+**Priority:** High - [Justification for why this unconventional approach is valuable]
+
+**Implementation Steps:**
+1. [Revolutionary step 1]
+2. [Innovative step 2] 
+3. [Groundbreaking step 3]
+
+Make this so innovative and different that it would be impossible to confuse with any existing code review tool feature!
+`;
+
+  // Check token usage before making API call
+  const estimatedTokens = estimateTokens(prompt);
+  console.log(`📊 Estimated tokens for OUTLANDISH prompt: ${estimatedTokens}`);
+
+  if (estimatedTokens > MAX_TOKENS) {
+    console.error(
+      `❌ Prompt too large (${estimatedTokens} tokens > ${MAX_TOKENS} limit)`
+    );
+    return null;
+  }
+
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a visionary software architect who creates REVOLUTIONARY, UNPRECEDENTED features that no one has ever thought of before. You specialize in breaking conventions and creating genuinely innovative developer experiences that combine technology, creativity, and human psychology in unexpected ways.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        max_tokens: 1500,
+        temperature: 1.2, // Maximum creativity for truly outlandish ideas
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    return response.data.choices[0].message.content;
+  } catch (error) {
+    console.error(
+      'Error calling OpenAI API for outlandish suggestions:',
+      error.response?.data || error.message
+    );
+    return null;
+  }
+}
+
+// Main suggestion generation with retry logic
+async function generateSuggestionsWithRetry(repoInfo, analysis, fileContents, retryCount = 0, lastSimilarityData = null) {
+  const maxRetries = 2;
+  
+  console.log(`🎯 Generating suggestions (attempt ${retryCount + 1}/${maxRetries + 1})`);
+
+  let suggestions;
+  
+  // If we have similarity data from a previous attempt, go straight to outlandish mode
+  if (lastSimilarityData) {
+    suggestions = await generateOutlandishSuggestions(repoInfo, analysis, fileContents, lastSimilarityData);
+  } else {
+    suggestions = await generateNormalSuggestions(repoInfo, analysis, fileContents);
+  }
+
+  if (!suggestions) {
+    console.log('❌ Failed to generate suggestions');
+    return null;
+  }
+
+  // Check for similarity
+  console.log('🔍 Checking for existing similar issues...');
+  const { hasSimilar, similarityData } = await checkForExistingIssues(suggestions);
+
+  if (!hasSimilar) {
+    console.log('✅ Suggestions are unique!');
+    return suggestions;
+  }
+
+  // If we found similarity and haven't exhausted retries, try again with outlandish mode
+  if (retryCount < maxRetries) {
+    console.log(`🔄 Similarity detected, retrying with more outlandish approach (retry ${retryCount + 1}/${maxRetries})`);
+    return await generateSuggestionsWithRetry(repoInfo, analysis, fileContents, retryCount + 1, similarityData);
+  }
+
+  // If we've exhausted retries, return the outlandish suggestions anyway
+  console.log('⚠️ Exhausted retries, but proceeding with outlandish suggestions to ensure novelty');
+  return suggestions;
+}
+
+// Original suggestion generation (now renamed)
+async function generateNormalSuggestions(repoInfo, analysis, fileContents) {
   // Create a sophisticated, project-specific prompt
   const prompt = `
 You are an expert software architect specializing in AI-powered developer tools. You are analyzing the "recursive-site" repository, which is an AI Code Review Tool built with Next.js.
@@ -761,11 +968,30 @@ ${Object.entries(analysis.currentFeatures)
 ${analysis.roadmap.length > 0 ? analysis.roadmap.map(item => `- ${item}`).join('\n') : '- No explicit roadmap items found'}
 
 **IMPORTANT: AVOID THESE OVER-SUGGESTED FEATURES:**
-Recent AI suggestions have been too focused on similar themes. Please AVOID suggesting features that are primarily about:
+Recent AI suggestions have been too focused on similar themes. Please ACTIVELY AVOID suggesting features that are primarily about:
 - AI-powered code refactoring (already suggested many times)
 - General AI code review assistance 
 - Basic code improvement suggestions
 - Simple OpenAI API integration for code analysis
+- Context-aware code suggestions
+- Smart refactoring tools
+
+**SEEK TRULY DIVERSE AREAS - Choose from UNDEREXPLORED categories:**
+- Advanced developer analytics and workflow insights
+- Team collaboration and knowledge sharing platforms
+- Code security and vulnerability detection systems
+- Performance monitoring and optimization dashboards
+- Developer onboarding and learning assistance tools
+- Project management and workflow automation
+- Code documentation and API generation systems
+- Testing and quality assurance automation
+- Multi-repository and enterprise features
+- Developer productivity and time tracking
+- Code deployment and infrastructure management
+- Custom plugin and extension systems
+- Developer wellness and experience features
+- Social coding and community features
+- Creative coding and visualization tools
 
 **CURRENT TECH STACK (from analysis):**
 ${Object.entries(fileContents)
@@ -874,7 +1100,7 @@ Make this suggestion exciting, innovative, and DIFFERENT from typical code revie
           },
         ],
         max_tokens: 1500,
-        temperature: 0.9, // Increased temperature for more creative, diverse suggestions
+        temperature: 1.0, // Increased temperature for more creative, diverse suggestions
       },
       {
         headers: {
@@ -943,17 +1169,6 @@ async function main() {
   );
 
   if (suggestions) {
-    // Check for existing similar issues before creating new ones
-    console.log('🔍 Checking for existing similar issues...');
-    const hasSimilarIssues = await checkForExistingIssues(suggestions);
-
-    if (hasSimilarIssues) {
-      console.log('⏭️ Skipping issue creation - similar issues already exist');
-      // Write a flag to indicate no new issue should be created
-      fs.writeFileSync('.github/skip-issue-creation.txt', 'true');
-      return;
-    }
-
     // Write suggestions to file
     fs.writeFileSync('.github/suggestions.txt', suggestions);
     console.log('✅ AI feature suggestion generated and saved');
