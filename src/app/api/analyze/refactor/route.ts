@@ -47,16 +47,21 @@ async function getRefactoringSuggestions(
     // Extract context from the code
     const context = extractCodeContext(code, language);
 
+    // Randomly determine creativity level (70% conservative, 30% creative)
+    const isCreative = Math.random() < 0.3;
+    const creativity = isCreative ? 'creative' : 'conservative';
+
     // Create focused prompt for refactoring suggestions
-    const refactoringPrompt = createRefactoringPrompt(code, language, context);
+    const refactoringPrompt = createRefactoringPrompt(code, language, context, creativity);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
-          content:
-            'You are an expert code refactoring assistant specializing in identifying code smells, anti-patterns, and structural improvements. Provide sophisticated refactoring suggestions with concrete before/after examples that enhance maintainability, readability, and performance.',
+          content: isCreative
+            ? 'You are an innovative code refactoring expert who thinks outside the box. Suggest creative refactoring approaches, advanced design patterns, and unconventional but practical solutions. Push the boundaries of what\'s possible while maintaining code quality and readability.'
+            : 'You are an expert code refactoring assistant specializing in identifying code smells, anti-patterns, and structural improvements. Provide sophisticated refactoring suggestions with concrete before/after examples that enhance maintainability, readability, and performance.',
         },
         {
           role: 'user',
@@ -64,7 +69,7 @@ async function getRefactoringSuggestions(
         },
       ],
       max_tokens: 2000,
-      temperature: 0.1,
+      temperature: isCreative ? 0.7 : 0.1,
     });
 
     const content = response.choices[0]?.message?.content;
@@ -201,7 +206,8 @@ function createRefactoringPrompt(
     patterns: string[];
     language: string;
     codeStructure: string;
-  }
+  },
+  creativity: 'conservative' | 'creative' = 'conservative'
 ): string {
   const contextInfo = context.codeStructure
     ? `Code Structure: ${context.codeStructure}`
@@ -212,24 +218,56 @@ function createRefactoringPrompt(
       : '';
   const complexity = `Complexity Score: ${context.complexity}`;
 
-  return `Analyze this ${language} code for intelligent refactoring opportunities.
+  const basePrompt = `Analyze this ${language} code for intelligent refactoring opportunities.
 
 Context:
 ${contextInfo}
 ${patterns}
 ${complexity}
 
-Focus on identifying:
-1. **Code Smells** - Long methods, duplicate code, large classes, feature envy, etc.
-2. **Anti-Patterns** - God objects, spaghetti code, magic numbers, etc.
-3. **Design Pattern Opportunities** - Where applying design patterns would improve structure
-4. **Performance Bottlenecks** - Inefficient algorithms, unnecessary computations
-5. **Maintainability Issues** - Hard-to-understand code, tight coupling
-
 Code to analyze:
 \`\`\`${language}
 ${code}
-\`\`\`
+\`\`\``;
+
+  if (creativity === 'creative') {
+    return `${basePrompt}
+
+Focus on innovative and creative refactoring opportunities:
+1. **Advanced Design Patterns** - Suggest sophisticated patterns like Strategy, Observer, Command, or functional programming approaches
+2. **Architectural Innovations** - Recommend modern architectural patterns, microservices patterns, or event-driven approaches
+3. **Creative Abstractions** - Identify opportunities for elegant abstractions, fluent interfaces, or DSL-like approaches
+4. **Experimental Techniques** - Suggest cutting-edge language features, metaprogramming, or advanced functional concepts
+5. **Unconventional Solutions** - Think outside the box for unique approaches to common problems
+
+Provide 1-3 creative refactoring suggestions in JSON format:
+{
+  "suggestions": [
+    {
+      "title": "Creative and innovative refactoring title",
+      "description": "What this creative refactoring accomplishes",
+      "reasoning": "Why this innovative approach is beneficial and worth exploring",
+      "type": "creative-pattern|architectural-innovation|advanced-abstraction|experimental-technique|unconventional-solution",
+      "complexity": "medium|high",
+      "impact": "medium|high", 
+      "beforeCode": "// Original code snippet showing the area for creative improvement",
+      "afterCode": "// Creatively refactored code showing the innovative approach",
+      "line": <line number where improvement starts>,
+      "estimatedTime": "estimated time to apply creative refactoring"
+    }
+  ]
+}
+
+Be bold and innovative while ensuring the suggestions remain practical and beneficial.`;
+  } else {
+    return `${basePrompt}
+
+Focus on identifying standard refactoring opportunities:
+1. **Code Smells** - Long methods, duplicate code, large classes, feature envy, etc.
+2. **Anti-Patterns** - God objects, spaghetti code, magic numbers, etc.
+3. **Design Pattern Opportunities** - Where applying standard design patterns would improve structure
+4. **Performance Bottlenecks** - Inefficient algorithms, unnecessary computations
+5. **Maintainability Issues** - Hard-to-understand code, tight coupling
 
 Provide 2-4 most impactful refactoring suggestions in JSON format:
 {
@@ -250,6 +288,7 @@ Provide 2-4 most impactful refactoring suggestions in JSON format:
 }
 
 Provide concrete, actionable refactoring suggestions with realistic before/after code examples.`;
+  }
 }
 
 interface RefactoringSuggestion {

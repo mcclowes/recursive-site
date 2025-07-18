@@ -22,6 +22,7 @@ interface ContextualSuggestion {
   isInline: boolean;
   actionable: boolean;
   quickFix: string | null;
+  isCreative?: boolean;
 }
 
 interface RefactoringSuggestion {
@@ -563,12 +564,21 @@ export default function Home() {
                       <h3 className='text-lg font-semibold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2'>
                         <span className='text-2xl'>🚀</span>
                         Real-time Contextual Suggestions
+                        {contextualSuggestions.some(s => s.isCreative) && (
+                          <span className='px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full animate-pulse'>
+                            ✨ Creative Mode
+                          </span>
+                        )}
                       </h3>
                       <div className='space-y-2'>
                         {contextualSuggestions.slice(0, 5).map(suggestion => (
                           <div
                             key={suggestion.id}
-                            className='flex items-start gap-3 p-2 bg-white dark:bg-gray-800 rounded border border-blue-100 dark:border-blue-800'
+                            className={`flex items-start gap-3 p-2 rounded border ${
+                              suggestion.isCreative 
+                                ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800' 
+                                : 'bg-white dark:bg-gray-800 border-blue-100 dark:border-blue-800'
+                            }`}
                           >
                             <div
                               className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${getSeverityColor(suggestion.severity)}`}
@@ -578,7 +588,11 @@ export default function Home() {
                                 <span className='text-sm font-medium text-gray-800 dark:text-white'>
                                   Line {suggestion.line}:{suggestion.column}
                                 </span>
-                                <span className='px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full'>
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  suggestion.isCreative 
+                                    ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' 
+                                    : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                                }`}>
                                   {suggestion.category}
                                 </span>
                                 <span
@@ -586,6 +600,11 @@ export default function Home() {
                                 >
                                   {Math.round(suggestion.confidence * 100)}%
                                 </span>
+                                {suggestion.isCreative && (
+                                  <span className='text-xs text-purple-600 dark:text-purple-400'>
+                                    ✨ Creative
+                                  </span>
+                                )}
                               </div>
                               <div className='text-sm text-gray-600 dark:text-gray-300 mb-1'>
                                 {suggestion.message}
