@@ -2,8 +2,8 @@ name: AI-Powered Feature Suggestion Generator
 
 on:
   schedule:
-    # Run every hour
-    - cron: '0 * * * *'
+    # Run 3 times per day (at midnight, 8 AM, and 4 PM UTC)
+    - cron: '0 0,8,16 * * *'
   pull_request:
     types: [closed]
   workflow_dispatch: # Allow manual triggering
