@@ -1,0 +1,36 @@
+# CODEOWNERS file for recursive-site repository
+# 
+# This file defines who is responsible for code reviews in this repository.
+# Each line represents a file path or pattern with corresponding code owners.
+# 
+# More info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global ownership - all files and directories
+* @mcclowes
+
+# Frontend source code
+/src/ @mcclowes
+
+# Configuration files
+/package.json @mcclowes
+/package-lock.json @mcclowes
+/tsconfig.json @mcclowes
+/next.config.ts @mcclowes
+/eslint.config.mjs @mcclowes
+/postcss.config.mjs @mcclowes
+/.prettierrc.json @mcclowes
+/.prettierignore @mcclowes
+/jest.config.js @mcclowes
+/jest.setup.js @mcclowes
+
+# Documentation
+/README.md @mcclowes
+/docs/ @mcclowes
+/*.md @mcclowes
+
+# CI/CD and GitHub configuration
+/.github/ @mcclowes
+
+# Environment and deployment
+/.env.example @mcclowes
+/vercel.json @mcclowes
