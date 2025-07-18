@@ -4,6 +4,9 @@ import { useState } from 'react';
 import SimpleCodeEditor from '@/components/SimpleCodeEditor';
 import EnhancedCodeEditor from '@/components/EnhancedCodeEditor';
 import RefactoringSuggestions from '@/components/RefactoringSuggestions';
+import ZenSanctuaryMode from '@/components/ZenSanctuaryMode';
+import CodeMetricsVisualization from '@/components/CodeMetricsVisualization';
+import AmbientSounds from '@/components/AmbientSounds';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface ContextualSuggestion {
@@ -119,6 +122,7 @@ export default function Home() {
     RefactoringSuggestion[]
   >([]);
   const [isLoadingRefactoring, setIsLoadingRefactoring] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
 
   const handleContextualSuggestions = (suggestions: ContextualSuggestion[]) => {
     setContextualSuggestions(suggestions);
@@ -356,8 +360,44 @@ export default function Home() {
     }
   };
 
+  // Get zen theme information for ambient sounds
+  const getZenTheme = (score: number) => {
+    if (score >= 80) return 'Serene Mountain';
+    if (score >= 60) return 'Tranquil Forest';
+    if (score >= 40) return 'Golden Meadow';
+    return 'Calming Sunset';
+  };
+
+  const zenTheme = analysis ? getZenTheme(analysis.score) : 'Tranquil Forest';
+
   return (
-    <div className='min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800'>
+    <div className={`min-h-screen transition-all duration-1000 ${
+      zenMode 
+        ? `bg-gradient-to-br ${
+            (analysis?.score ?? 50) >= 80 
+              ? 'from-blue-100 via-blue-50 to-indigo-100 dark:from-blue-950 dark:via-blue-900 dark:to-indigo-950'
+              : (analysis?.score ?? 50) >= 60
+              ? 'from-green-100 via-green-50 to-emerald-100 dark:from-green-950 dark:via-green-900 dark:to-emerald-950'
+              : (analysis?.score ?? 50) >= 40
+              ? 'from-yellow-100 via-yellow-50 to-amber-100 dark:from-yellow-950 dark:via-yellow-900 dark:to-amber-950'
+              : 'from-orange-100 via-orange-50 to-red-100 dark:from-orange-950 dark:via-orange-900 dark:to-red-950'
+          }`
+        : 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800'
+    } relative overflow-hidden`}>
+      {/* Code Metrics Visualization for Zen Mode */}
+      {zenMode && analysis && (
+        <CodeMetricsVisualization 
+          metrics={{
+            lines: analysis.metrics.lines,
+            characters: analysis.metrics.characters,
+            complexity: analysis.metrics.complexity,
+            maintainability: analysis.metrics.maintainability,
+            score: analysis.score
+          }} 
+          isZenMode={zenMode} 
+        />
+      )}
+
       <Toaster position='top-right' />
 
       <div className='container mx-auto px-4 py-8'>
@@ -383,6 +423,21 @@ export default function Home() {
                 <span className='w-2 h-2 bg-purple-500 rounded-full animate-pulse'></span>
                 Real-time Contextual AI
               </div>
+              {zenMode && (
+                <div className='flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-pink-100 to-blue-100 dark:from-pink-900 dark:to-blue-900 text-pink-700 dark:text-pink-300 rounded-full text-sm'>
+                  <span className='w-2 h-2 bg-gradient-to-r from-pink-500 to-blue-500 rounded-full animate-pulse'></span>
+                  Zen Sanctuary Active
+                </div>
+              )}
+            </div>
+            
+            {/* Zen Sanctuary Toggle */}
+            <div className='mt-6 flex justify-center'>
+              <ZenSanctuaryMode 
+                isEnabled={zenMode}
+                onToggle={setZenMode}
+                codeQualityScore={analysis?.score || 50}
+              />
             </div>
           </div>
 
@@ -485,10 +540,20 @@ export default function Home() {
             </div>
 
             {/* Analysis Results Section */}
-            <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6'>
+            <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 relative'>
               <h2 className='text-xl font-semibold text-gray-800 dark:text-white mb-4'>
                 Analysis Results
               </h2>
+
+              {/* Ambient Sounds Panel in Zen Mode */}
+              {zenMode && analysis && (
+                <div className='absolute top-4 right-4 z-10'>
+                  <AmbientSounds 
+                    isEnabled={true}
+                    theme={zenTheme}
+                  />
+                </div>
+              )}
 
               {analysis ? (
                 <div className='space-y-6'>
