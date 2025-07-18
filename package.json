@@ -13,7 +13,11 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@mediapipe/camera_utils": "^0.3.1675466862",
+    "@mediapipe/drawing_utils": "^0.3.1675466124",
+    "@mediapipe/hands": "^0.4.1675469240",
     "@monaco-editor/react": "^4.7.0",
+    "@types/three": "^0.178.1",
     "axios": "^1.10.0",
     "js-yaml": "^4.1.0",
     "next": "15.4.1",
@@ -21,7 +25,8 @@
     "prismjs": "^1.30.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-hot-toast": "^2.5.2"
+    "react-hot-toast": "^2.5.2",
+    "three": "^0.178.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
