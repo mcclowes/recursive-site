@@ -52,16 +52,21 @@ async function getAIAnalysis(
     // Extract context from the code
     const context = extractCodeContext(code, language);
 
+    // Randomly determine creativity level (70% conservative, 30% creative)
+    const isCreative = Math.random() < 0.3;
+    const creativity = isCreative ? 'creative' : 'conservative';
+
     // Create context-aware prompt
-    const contextPrompt = createContextAwarePrompt(code, language, context);
+    const contextPrompt = createContextAwarePrompt(code, language, context, creativity);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
-          content:
-            'You are an expert code reviewer with deep knowledge of software engineering best practices, design patterns, and modern development approaches. Provide constructive, context-aware feedback in the specified JSON format.',
+          content: isCreative
+            ? 'You are an innovative code reviewer with deep knowledge of software engineering best practices, design patterns, and creative development approaches. Provide constructive, sometimes unconventional feedback that pushes the boundaries of what\'s possible while maintaining code quality.'
+            : 'You are an expert code reviewer with deep knowledge of software engineering best practices, design patterns, and modern development approaches. Provide constructive, context-aware feedback in the specified JSON format.',
         },
         {
           role: 'user',
@@ -69,7 +74,7 @@ async function getAIAnalysis(
         },
       ],
       max_tokens: 1500,
-      temperature: 0.2,
+      temperature: isCreative ? 0.7 : 0.2,
     });
 
     const content = response.choices[0]?.message?.content;
@@ -129,7 +134,8 @@ function createContextAwarePrompt(
     patterns: string[];
     language: string;
     codeStructure: string;
-  }
+  },
+  creativity: 'conservative' | 'creative' = 'conservative'
 ): string {
   const contextInfo = context.codeStructure
     ? `\n\nCode Structure: ${context.codeStructure}`
@@ -140,21 +146,52 @@ function createContextAwarePrompt(
       : '';
   const complexity = `\nComplexity Score: ${context.complexity}`;
 
-  return `You are reviewing ${language} code with the following context:${contextInfo}${patterns}${complexity}
-
-Please analyze the code and provide specific, actionable improvement suggestions. Consider:
-
-1. **Context-Aware Improvements**: Based on the detected functions, classes, and patterns
-2. **Best Practices**: Language-specific best practices and conventions
-3. **Performance**: Optimization opportunities based on the code structure
-4. **Security**: Potential security vulnerabilities or concerns
-5. **Maintainability**: Code readability and long-term maintainability
-6. **Design Patterns**: Suggest appropriate design patterns if applicable
+  const basePrompt = `You are reviewing ${language} code with the following context:${contextInfo}${patterns}${complexity}
 
 Code to analyze:
 \`\`\`${language}
 ${code}
-\`\`\`
+\`\`\``;
+
+  if (creativity === 'creative') {
+    return `${basePrompt}
+
+Please provide creative and innovative analysis considering:
+
+1. **Creative Improvements** - Suggest innovative approaches, advanced patterns, or unconventional solutions
+2. **Advanced Techniques** - Recommend cutting-edge language features, architectural patterns, or creative optimizations
+3. **Experimental Ideas** - Propose bold but practical improvements that push boundaries
+4. **Innovative Patterns** - Suggest creative use of design patterns, functional programming, or modern paradigms
+5. **Architectural Creativity** - Recommend innovative structural improvements or creative abstractions
+6. **Advanced Optimizations** - Suggest sophisticated performance or maintainability improvements
+
+Provide your response in the following JSON format:
+{
+  "score": <number between 0-100>,
+  "suggestions": [
+    {
+      "type": "suggestion|warning|info|success",
+      "message": "creative, innovative suggestion",
+      "explanation": "detailed explanation of the creative approach and its benefits",
+      "line": <line number or 1 if general>,
+      "category": "innovation|advanced-patterns|creative-architecture|experimental|modern-approach|sophisticated-optimization",
+      "confidence": <number between 0-1 indicating confidence in creative suggestion>
+    }
+  ]
+}
+
+Focus on providing innovative, creative suggestions that experienced developers would find intriguing and valuable.`;
+  } else {
+    return `${basePrompt}
+
+Please analyze the code and provide specific, actionable improvement suggestions. Consider:
+
+1. **Context-Aware Improvements** - Based on the detected functions, classes, and patterns
+2. **Best Practices** - Language-specific best practices and conventions
+3. **Performance** - Optimization opportunities based on the code structure
+4. **Security** - Potential security vulnerabilities or concerns
+5. **Maintainability** - Code readability and long-term maintainability
+6. **Design Patterns** - Suggest appropriate design patterns if applicable
 
 Provide your response in the following JSON format:
 {
@@ -172,6 +209,7 @@ Provide your response in the following JSON format:
 }
 
 Focus on providing context-aware suggestions that consider the specific code structure and patterns detected.`;
+  }
 }
 
 interface RuleBasedAnalysis {

@@ -47,16 +47,21 @@ async function getContextualSuggestions(
     // Extract context from the code
     const context = extractCodeContext(code, language);
 
+    // Randomly determine creativity level (70% conservative, 30% creative)
+    const isCreative = Math.random() < 0.3;
+    const creativity = isCreative ? 'creative' : 'conservative';
+
     // Create focused prompt for real-time suggestions
-    const contextPrompt = createRealTimePrompt(code, language, context);
+    const contextPrompt = createRealTimePrompt(code, language, context, creativity);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
-          content:
-            'You are an advanced code assistant providing real-time, contextual suggestions. Focus on immediate improvements, best practices, and actionable feedback that helps developers as they write code. Provide specific, contextual suggestions based on the code structure and patterns.',
+          content: isCreative
+            ? 'You are an innovative code assistant providing creative, sometimes unconventional suggestions. Think outside the box and suggest creative refactoring approaches, advanced patterns, and unique optimizations that experienced developers might not immediately consider. Be bold with your suggestions while still keeping them practical.'
+            : 'You are an advanced code assistant providing real-time, contextual suggestions. Focus on immediate improvements, best practices, and actionable feedback that helps developers as they write code. Provide specific, contextual suggestions based on the code structure and patterns.',
         },
         {
           role: 'user',
@@ -64,7 +69,7 @@ async function getContextualSuggestions(
         },
       ],
       max_tokens: 800,
-      temperature: 0.1,
+      temperature: isCreative ? 0.7 : 0.1,
     });
 
     const content = response.choices[0]?.message?.content;
@@ -104,6 +109,7 @@ async function getContextualSuggestions(
         isInline: true,
         actionable: suggestion.actionable || false,
         quickFix: suggestion.quickFix || null,
+        isCreative: isCreative, // Add flag to indicate creative mode
       })
     );
 
@@ -126,7 +132,8 @@ function createRealTimePrompt(
     patterns: string[];
     language: string;
     codeStructure: string;
-  }
+  },
+  creativity: 'conservative' | 'creative' = 'conservative'
 ): string {
   const contextInfo = context.codeStructure
     ? `Code Structure: ${context.codeStructure}`
@@ -137,26 +144,58 @@ function createRealTimePrompt(
       : '';
   const complexity = `Complexity Score: ${context.complexity}`;
 
-  return `Analyze this ${language} code for real-time contextual suggestions.
+  const basePrompt = `Analyze this ${language} code for real-time contextual suggestions.
 
 Context:
 ${contextInfo}
 ${patterns}
 ${complexity}
 
-Focus on:
-1. **Immediate Improvements** - Quick wins and optimizations
-2. **Best Practices** - Language-specific conventions
-3. **Potential Issues** - Security, performance, or logic concerns
-4. **Code Quality** - Readability and maintainability
-5. **Contextual Advice** - Based on detected patterns and structure
-
 Code to analyze:
 \`\`\`${language}
 ${code}
-\`\`\`
+\`\`\``;
 
-Provide 3-5 most relevant suggestions in JSON format:
+  if (creativity === 'creative') {
+    return `${basePrompt}
+
+Focus on providing creative and innovative suggestions:
+1. **Unconventional Approaches** - Suggest creative refactoring techniques, advanced patterns, or unique architectural improvements
+2. **Advanced Optimizations** - Recommend sophisticated performance improvements or elegant algorithmic approaches
+3. **Modern Paradigms** - Suggest adopting cutting-edge language features, design patterns, or architectural styles
+4. **Creative Problem Solving** - Think outside the box for unique solutions to common problems
+5. **Experimental Ideas** - Propose innovative approaches that experienced developers might find intriguing
+
+Provide 2-4 creative suggestions in JSON format:
+{
+  "suggestions": [
+    {
+      "type": "suggestion|warning|info|error",
+      "message": "Creative, innovative suggestion",
+      "explanation": "Detailed explanation of the creative approach and its benefits",
+      "line": <line number>,
+      "column": <column number or 1>,
+      "category": "innovation|advanced-patterns|creative-optimization|experimental|modern-approach",
+      "confidence": <0-1>,
+      "severity": "error|warning|info|hint",
+      "actionable": true|false,
+      "quickFix": "suggested creative code improvement" or null
+    }
+  ]
+}
+
+Be bold and creative while maintaining practicality.`;
+  } else {
+    return `${basePrompt}
+
+Focus on providing practical, conventional suggestions:
+1. **Immediate Improvements** - Quick wins and standard optimizations
+2. **Best Practices** - Language-specific conventions and established patterns
+3. **Potential Issues** - Security, performance, or logic concerns
+4. **Code Quality** - Readability and maintainability improvements
+5. **Standard Advice** - Based on well-established coding guidelines
+
+Provide 3-5 most relevant, practical suggestions in JSON format:
 {
   "suggestions": [
     {
@@ -174,7 +213,8 @@ Provide 3-5 most relevant suggestions in JSON format:
   ]
 }
 
-Focus on the most impactful suggestions that provide immediate value to the developer.`;
+Focus on practical improvements that provide immediate value.`;
+  }
 }
 
 interface ContextualSuggestion {
@@ -190,4 +230,5 @@ interface ContextualSuggestion {
   isInline: boolean;
   actionable: boolean;
   quickFix: string | null;
+  isCreative?: boolean;
 }
