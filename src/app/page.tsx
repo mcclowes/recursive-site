@@ -7,6 +7,8 @@ import RefactoringSuggestions from '@/components/RefactoringSuggestions';
 import ZenSanctuaryMode from '@/components/ZenSanctuaryMode';
 import CodeMetricsVisualization from '@/components/CodeMetricsVisualization';
 import AmbientSounds from '@/components/AmbientSounds';
+import KaleidoscopicCanvas from '@/components/KaleidoscopicCanvas';
+import KaleidoscopicModeToggle from '@/components/KaleidoscopicModeToggle';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface ContextualSuggestion {
@@ -22,6 +24,15 @@ interface ContextualSuggestion {
   isInline: boolean;
   actionable: boolean;
   quickFix: string | null;
+}
+
+interface CodeElement {
+  id: string;
+  type: 'function' | 'class' | 'variable' | 'import' | 'comment';
+  name: string;
+  line: number;
+  complexity: number;
+  content: string;
 }
 
 interface RefactoringSuggestion {
@@ -123,6 +134,7 @@ export default function Home() {
   >([]);
   const [isLoadingRefactoring, setIsLoadingRefactoring] = useState(false);
   const [zenMode, setZenMode] = useState(false);
+  const [kaleidoscopicMode, setKaleidoscopicMode] = useState(false);
 
   const handleContextualSuggestions = (suggestions: ContextualSuggestion[]) => {
     setContextualSuggestions(suggestions);
@@ -215,6 +227,10 @@ export default function Home() {
       prev.filter(suggestion => suggestion.id !== suggestionId)
     );
     toast.success('Refactoring suggestion dismissed');
+  };
+
+  const handleElementSelect = (element: CodeElement) => {
+    toast.success(`Selected ${element.type}: ${element.name} at line ${element.line}`);
   };
 
   const analyzeCode = async () => {
@@ -382,8 +398,31 @@ export default function Home() {
               ? 'from-yellow-100 via-yellow-50 to-amber-100 dark:from-yellow-950 dark:via-yellow-900 dark:to-amber-950'
               : 'from-orange-100 via-orange-50 to-red-100 dark:from-orange-950 dark:via-orange-900 dark:to-red-950'
           }`
+        : kaleidoscopicMode
+        ? 'bg-black'
         : 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800'
     } relative overflow-hidden`}>
+      {/* Kaleidoscopic Canvas - Full Screen Overlay */}
+      {kaleidoscopicMode && (
+        <div className="fixed inset-0 z-50">
+          <KaleidoscopicCanvas
+            code={code}
+            language={language}
+            analysis={analysis}
+            isEnabled={kaleidoscopicMode}
+            onElementSelect={handleElementSelect}
+          />
+          
+          {/* Exit Button */}
+          <button
+            onClick={() => setKaleidoscopicMode(false)}
+            className="absolute top-4 right-4 z-60 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg"
+          >
+            <span>✕</span>
+            Exit Kaleidoscopic Mode
+          </button>
+        </div>
+      )}
       {/* Code Metrics Visualization for Zen Mode */}
       {zenMode && analysis && (
         <CodeMetricsVisualization 
@@ -423,6 +462,10 @@ export default function Home() {
                 <span className='w-2 h-2 bg-purple-500 rounded-full animate-pulse'></span>
                 Real-time Contextual AI
               </div>
+              <div className='flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 text-indigo-700 dark:text-indigo-300 rounded-full text-sm'>
+                <span className='w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse'></span>
+                Kaleidoscopic Wisdom
+              </div>
               {zenMode && (
                 <div className='flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-pink-100 to-blue-100 dark:from-pink-900 dark:to-blue-900 text-pink-700 dark:text-pink-300 rounded-full text-sm'>
                   <span className='w-2 h-2 bg-gradient-to-r from-pink-500 to-blue-500 rounded-full animate-pulse'></span>
@@ -436,6 +479,15 @@ export default function Home() {
               <ZenSanctuaryMode 
                 isEnabled={zenMode}
                 onToggle={setZenMode}
+                codeQualityScore={analysis?.score || 50}
+              />
+            </div>
+
+            {/* Kaleidoscopic Mode Toggle */}
+            <div className='mt-6 flex justify-center'>
+              <KaleidoscopicModeToggle
+                isEnabled={kaleidoscopicMode}
+                onToggle={setKaleidoscopicMode}
                 codeQualityScore={analysis?.score || 50}
               />
             </div>
@@ -942,12 +994,12 @@ export default function Home() {
                 </p>
               </div>
               <div className='text-center'>
-                <div className='text-3xl mb-3'>💡</div>
+                <div className='text-3xl mb-3'>💎</div>
                 <h3 className='font-semibold text-gray-800 dark:text-white mb-2'>
-                  AI-Powered Suggestions
+                  Kaleidoscopic Wisdom
                 </h3>
                 <p className='text-gray-600 dark:text-gray-300 text-sm'>
-                  Get context-aware recommendations from advanced AI models
+                  Transform code into an immersive 3D collaborative canvas with AR/VR support
                 </p>
               </div>
             </div>

@@ -69,11 +69,11 @@ describe('AI Code Review Tool', () => {
 
     const instantAnalysis = screen.getByText('Instant Analysis');
     const intelligentRefactoring = screen.getByText('Intelligent Refactoring');
-    const aiPoweredSuggestions = screen.getByText('AI-Powered Suggestions');
+    const kaleidoscopicWisdomDescription = screen.getByText('Transform code into an immersive 3D collaborative canvas with AR/VR support');
 
     expect(instantAnalysis).toBeInTheDocument();
     expect(intelligentRefactoring).toBeInTheDocument();
-    expect(aiPoweredSuggestions).toBeInTheDocument();
+    expect(kaleidoscopicWisdomDescription).toBeInTheDocument();
   });
 
   it('renders the analysis type indicators', () => {
